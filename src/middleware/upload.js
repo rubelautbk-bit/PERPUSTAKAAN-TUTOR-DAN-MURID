@@ -2,13 +2,14 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Di Vercel, kita tidak bisa menulis ke public/uploads (read-only).
-// Gunakan /tmp (ephemeral - file hilang tiap cold start).
-// Untuk production, pakai S3 / Cloudinary / UploadThing.
+// Lokasi upload bisa di-override dengan env var UPLOAD_DIR.
+// - Railway (dengan volume): set UPLOAD_DIR=/data/uploads
+// - Vercel: paksa ke /tmp (ephemeral)
+// - Default: ./public/uploads
 const isVercel = !!process.env.VERCEL;
-const uploadDir = isVercel
-  ? '/tmp/rubela-uploads'
-  : path.join(__dirname, '../../public/uploads');
+const uploadDir =
+  process.env.UPLOAD_DIR ||
+  (isVercel ? '/tmp/rubela-uploads' : path.join(__dirname, '../../public/uploads'));
 
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 

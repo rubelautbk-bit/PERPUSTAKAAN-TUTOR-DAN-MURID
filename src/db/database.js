@@ -2,13 +2,14 @@ const fs = require('fs');
 const path = require('path');
 const Database = require('better-sqlite3');
 
-// Di Vercel, filesystem read-only kecuali /tmp.
-// WARNING: /tmp bersifat ephemeral -> data akan hilang tiap cold start.
-// Untuk production yang persistent, migrasi ke Postgres/MySQL.
+// Lokasi DB bisa di-override dengan env var DATA_DIR.
+// - Local / Railway (dengan volume): set DATA_DIR=/data
+// - Vercel: paksa ke /tmp (ephemeral)
+// - Default: ./data relative ke project
 const isVercel = !!process.env.VERCEL;
-const dataDir = isVercel
-  ? '/tmp/rubela-data'
-  : path.join(__dirname, '../../data');
+const dataDir =
+  process.env.DATA_DIR ||
+  (isVercel ? '/tmp/rubela-data' : path.join(__dirname, '../../data'));
 
 if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });

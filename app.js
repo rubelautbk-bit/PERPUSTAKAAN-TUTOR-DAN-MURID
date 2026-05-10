@@ -28,6 +28,12 @@ app.use(express.json());
 app.use(methodOverride('_method'));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Kalau UPLOAD_DIR di-override (misal /data/uploads di Railway volume),
+// expose juga ke URL /uploads supaya <a href="/uploads/xxx.pdf"> tetap jalan.
+if (process.env.UPLOAD_DIR) {
+  app.use('/uploads', express.static(process.env.UPLOAD_DIR));
+}
+
 // Di serverless (Vercel), MemoryStore akan reset tiap invocation.
 // Untuk production, gunakan Redis / Postgres session store.
 app.use(
