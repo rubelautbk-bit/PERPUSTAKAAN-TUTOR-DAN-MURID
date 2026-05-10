@@ -1,6 +1,8 @@
 const express = require('express');
 const db = require('../db/database');
 const { ensureRole } = require('../middleware/auth');
+const gami = require('../utils/gamification');
+const { recommendForUser } = require('../utils/recommendation');
 
 const router = express.Router();
 router.use(ensureRole('murid'));
@@ -20,13 +22,16 @@ router.get('/', (req, res) => {
      WHERE p.user_id=? AND p.status='dipinjam' ORDER BY p.tanggal_kembali LIMIT 5`
   ).all(uid);
 
-  const rekomendasi = db.prepare(
+  // Gabung rekomendasi tutor + rekomendasi smart
+  const rekomendasiTutor = db.prepare(
     `SELECT r.*, b.judul, b.penulis, u.name AS tutor_name FROM rekomendasi r
      JOIN buku b ON b.id=r.buku_id JOIN users u ON u.id=r.tutor_id
      WHERE r.kelas_id IS NULL OR r.kelas_id IN (
        SELECT kelas_id FROM kelas_member WHERE user_id=?
      ) ORDER BY r.created_at DESC LIMIT 4`
   ).all(uid);
+
+  const rekomendasiSmart = recommendForUser(uid, 4);
 
   const notif = db.prepare(
     'SELECT * FROM notifikasi WHERE user_id=? ORDER BY created_at DESC LIMIT 5'
@@ -37,9 +42,14 @@ router.get('/', (req, res) => {
      WHERE pb.user_id=? ORDER BY pb.updated_at DESC LIMIT 3`
   ).all(uid);
 
+  const me = db.prepare('SELECT poin, level FROM users WHERE id=?').get(uid);
+
   res.render('murid/dashboard', {
     title: 'Dashboard Murid',
-    s, bukuAktif, rekomendasi, notif, progress,
+    s, bukuAktif,
+    rekomendasi: rekomendasiTutor,
+    rekomendasiSmart,
+    notif, progress, me,
   });
 });
 
@@ -74,7 +84,12 @@ router.post('/pinjam/:bukuId', (req, res) => {
   db.prepare(
     'INSERT INTO notifikasi (user_id,judul,pesan,tipe) VALUES (?,?,?,?)'
   ).run(uid, 'Permintaan Peminjaman', `Permintaan pinjam "${buku.judul}" menunggu persetujuan admin.`, 'info');
-  req.flash('success', 'Permintaan peminjaman dikirim, menunggu persetujuan admin.');
+
+  // Gamifikasi: +10 poin, check badge
+  gami.addPoin(uid, 10);
+  gami.checkAchievements(uid);
+
+  req.flash('success', 'Permintaan peminjaman dikirim. +10 poin!');
   res.redirect('/murid/buku-saya');
 });
 
@@ -123,6 +138,8 @@ router.post('/rating/:bukuId', (req, res) => {
   const uid = req.session.user.id;
   const bukuId = req.params.bukuId;
   try {
+    const exists = db.prepare('SELECT id FROM rating WHERE user_id=? AND buku_id=?')
+      .get(uid, bukuId);
     db.prepare(
       `INSERT INTO rating (user_id,buku_id,nilai,ulasan) VALUES (?,?,?,?)
        ON CONFLICT(user_id,buku_id) DO UPDATE SET nilai=excluded.nilai, ulasan=excluded.ulasan`
@@ -130,6 +147,10 @@ router.post('/rating/:bukuId', (req, res) => {
     const agg = db.prepare('SELECT AVG(nilai) a, COUNT(*) c FROM rating WHERE buku_id=?').get(bukuId);
     db.prepare('UPDATE buku SET rating=?, jumlah_rating=? WHERE id=?')
       .run(+agg.a.toFixed(1), agg.c, bukuId);
+    if (!exists) {
+      gami.addPoin(uid, 2);
+      gami.checkAchievements(uid);
+    }
     req.flash('success', 'Ulasan tersimpan.');
   } catch (e) {
     req.flash('error', 'Gagal menyimpan ulasan.');
@@ -162,6 +183,49 @@ router.post('/progress', (req, res) => {
   ).run(uid, buku_id, halaman_terakhir, persentase);
   req.flash('success', 'Progress diperbarui.');
   res.redirect('/murid/progress');
+});
+
+// Auto-save progress dari PDF Reader (AJAX)
+router.post('/progress/reader', express.json(), (req, res) => {
+  const { buku_id, halaman, total } = req.body;
+  const uid = req.session.user.id;
+  if (!buku_id || !halaman) return res.json({ ok: false });
+  const pct = total > 0 ? Math.min(100, Math.round((halaman / total) * 100)) : 0;
+  db.prepare(
+    `INSERT INTO progress_baca (user_id,buku_id,halaman_terakhir,persentase,updated_at)
+     VALUES (?,?,?,?,CURRENT_TIMESTAMP)
+     ON CONFLICT(user_id,buku_id) DO UPDATE SET halaman_terakhir=excluded.halaman_terakhir,
+     persentase=excluded.persentase, updated_at=CURRENT_TIMESTAMP`
+  ).run(uid, buku_id, halaman, pct);
+  // Reward saat tamat
+  if (pct >= 100) {
+    gami.addPoin(uid, 15);
+    gami.checkAchievements(uid);
+  }
+  res.json({ ok: true });
+});
+
+// BOOKMARK
+router.post('/bookmark/:bukuId', (req, res) => {
+  const uid = req.session.user.id;
+  const { halaman, catatan } = req.body;
+  if (!halaman) {
+    req.flash('error', 'Halaman tidak valid.');
+    return res.redirect('/buku/' + req.params.bukuId + '/baca');
+  }
+  db.prepare(
+    'INSERT INTO bookmark (user_id,buku_id,halaman,catatan) VALUES (?,?,?,?)'
+  ).run(uid, req.params.bukuId, halaman, catatan || null);
+  req.flash('success', `Bookmark hal. ${halaman} disimpan.`);
+  res.redirect('/buku/' + req.params.bukuId + '/baca');
+});
+
+router.delete('/bookmark/:id', (req, res) => {
+  const bm = db.prepare('SELECT buku_id FROM bookmark WHERE id=? AND user_id=?')
+    .get(req.params.id, req.session.user.id);
+  db.prepare('DELETE FROM bookmark WHERE id=? AND user_id=?')
+    .run(req.params.id, req.session.user.id);
+  res.redirect('/buku/' + (bm ? bm.buku_id : '') + '/baca');
 });
 
 // TUGAS / QUIZ
@@ -199,8 +263,21 @@ router.post('/tugas/:id/submit', (req, res) => {
     `INSERT INTO quiz_jawaban (quiz_id,user_id,nilai,selesai) VALUES (?,?,?,1)
      ON CONFLICT(quiz_id,user_id) DO UPDATE SET nilai=excluded.nilai, selesai=1`
   ).run(quizId, uid, nilai);
-  req.flash('success', `Nilai kamu: ${nilai} (${benar}/${soal.length} benar)`);
+  // Gamifikasi
+  if (nilai >= 80) {
+    gami.addPoin(uid, 20);
+  }
+  gami.checkAchievements(uid);
+  req.flash('success', `Nilai kamu: ${nilai} (${benar}/${soal.length} benar)${nilai >= 80 ? ' +20 poin!' : ''}`);
   res.redirect('/murid/tugas');
+});
+
+// LEADERBOARD + BADGE
+router.get('/leaderboard', (req, res) => {
+  const leaderboard = gami.getLeaderboard(20);
+  const me = db.prepare('SELECT poin, level FROM users WHERE id=?').get(req.session.user.id);
+  const badges = gami.getUserBadges(req.session.user.id);
+  res.render('murid/leaderboard', { title: 'Leaderboard', leaderboard, me, badges });
 });
 
 // FORUM
@@ -249,7 +326,8 @@ router.get('/notifikasi', (req, res) => {
 // PROFILE
 router.get('/profile', (req, res) => {
   const u = db.prepare('SELECT * FROM users WHERE id=?').get(req.session.user.id);
-  res.render('murid/profile', { title: 'Profile Saya', u });
+  const badges = gami.getUserBadges(req.session.user.id);
+  res.render('murid/profile', { title: 'Profile Saya', u, badges });
 });
 
 router.post('/profile', (req, res) => {

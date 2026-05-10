@@ -9,6 +9,9 @@ module.exports = function initSchema(db) {
       role TEXT NOT NULL CHECK(role IN ('admin','tutor','murid')),
       status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','suspended')),
       avatar TEXT,
+      poin INTEGER DEFAULT 0,
+      level INTEGER DEFAULT 1,
+      bahasa TEXT DEFAULT 'id',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -32,7 +35,9 @@ module.exports = function initSchema(db) {
       stok INTEGER DEFAULT 1,
       stok_tersedia INTEGER DEFAULT 1,
       cover TEXT,
+      cover_url TEXT,
       file_pdf TEXT,
+      pdf_url TEXT,
       rating REAL DEFAULT 0,
       jumlah_rating INTEGER DEFAULT 0,
       dibaca INTEGER DEFAULT 0,
@@ -85,6 +90,17 @@ module.exports = function initSchema(db) {
       persentase INTEGER DEFAULT 0,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(user_id, buku_id),
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY(buku_id) REFERENCES buku(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS bookmark (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      buku_id INTEGER NOT NULL,
+      halaman INTEGER NOT NULL,
+      catatan TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
       FOREIGN KEY(buku_id) REFERENCES buku(id) ON DELETE CASCADE
     );
@@ -211,5 +227,25 @@ module.exports = function initSchema(db) {
       FOREIGN KEY(forum_id) REFERENCES forum(id) ON DELETE CASCADE,
       FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS badge (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      kode TEXT NOT NULL,
+      nama TEXT NOT NULL,
+      deskripsi TEXT,
+      icon TEXT DEFAULT 'star',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(user_id, kode),
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
   `);
+
+  // Simple migration: tambahkan kolom baru kalau DB sudah ada (tanpa IF NOT EXISTS di ALTER)
+  const tryAdd = (sql) => { try { db.exec(sql); } catch (e) { /* kolom sudah ada */ } };
+  tryAdd(`ALTER TABLE users ADD COLUMN poin INTEGER DEFAULT 0`);
+  tryAdd(`ALTER TABLE users ADD COLUMN level INTEGER DEFAULT 1`);
+  tryAdd(`ALTER TABLE users ADD COLUMN bahasa TEXT DEFAULT 'id'`);
+  tryAdd(`ALTER TABLE buku ADD COLUMN cover_url TEXT`);
+  tryAdd(`ALTER TABLE buku ADD COLUMN pdf_url TEXT`);
 };

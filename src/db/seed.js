@@ -32,30 +32,30 @@ module.exports = function seed(db) {
   kategoriList.forEach((k) => insertKat.run(...k));
 
   const bukuList = [
-    ['Matematika SMP Kelas 7', 'Tim Penulis Erlangga', 'Erlangga', 2022, 'Pendidikan', 'Buku panduan matematika kelas 7 dengan latihan soal lengkap.', 320, 5],
-    ['Bahasa Indonesia untuk SMA', 'Dr. Wahyu Wibowo', 'Grasindo', 2021, 'Pendidikan', 'Materi bahasa Indonesia lengkap untuk SMA.', 280, 4],
-    ['Sejarah Indonesia Modern', 'Prof. Taufik Abdullah', 'Gramedia', 2020, 'Sejarah', 'Kronologi lengkap sejarah Indonesia abad 20-21.', 420, 3],
-    ['Laskar Pelangi', 'Andrea Hirata', 'Bentang Pustaka', 2005, 'Novel', 'Kisah inspiratif anak-anak Belitung yang haus ilmu.', 534, 6],
-    ['Bumi Manusia', 'Pramoedya Ananta Toer', 'Hasta Mitra', 1980, 'Novel', 'Tetralogi Buru bagian pertama, roman sejarah legendaris.', 535, 4],
-    ['Fisika Dasar', 'Halliday & Resnick', 'Erlangga', 2019, 'Pendidikan', 'Dasar-dasar fisika untuk SMA dan mahasiswa tingkat awal.', 612, 3],
-    ['Belajar Python Pemula', 'Ridwan Sanjaya', 'Informatika', 2023, 'Teknologi', 'Tutorial Python dari nol hingga mahir.', 300, 5],
-    ['Dasar Pemrograman Web', 'Abdul Kadir', 'Andi Publisher', 2022, 'Teknologi', 'HTML, CSS, JavaScript untuk pemula.', 350, 4],
-    ['Tafsir Al-Quran Juz 30', 'Ust. Quraish Shihab', 'Lentera Hati', 2018, 'Agama', 'Tafsir Juz Amma dengan bahasa sederhana.', 250, 3],
-    ['Candi-candi Nusantara', 'R. Soekmono', 'Kanisius', 2015, 'Arkeologi', 'Ensiklopedia candi peninggalan Nusantara.', 380, 2],
-    ['Jurnal Pendidikan Vol 12', 'Tim Redaksi', 'LP3I', 2024, 'Jurnal', 'Kumpulan artikel ilmiah bidang pendidikan.', 180, 2],
-    ['Komik Sains: Tubuhku', 'Gomdori', 'Elex Media', 2019, 'Komik Edukasi', 'Komik edukatif tentang anatomi tubuh manusia.', 220, 5],
+    ['Matematika SMP Kelas 7', 'Tim Penulis Erlangga', 'Erlangga', 2022, 'Pendidikan', 'Buku panduan matematika kelas 7 dengan latihan soal lengkap.', 320, 5, null, null],
+    ['Bahasa Indonesia untuk SMA', 'Dr. Wahyu Wibowo', 'Grasindo', 2021, 'Pendidikan', 'Materi bahasa Indonesia lengkap untuk SMA.', 280, 4, null, null],
+    ['Sejarah Indonesia Modern', 'Prof. Taufik Abdullah', 'Gramedia', 2020, 'Sejarah', 'Kronologi lengkap sejarah Indonesia abad 20-21.', 420, 3, null, null],
+    ['Laskar Pelangi', 'Andrea Hirata', 'Bentang Pustaka', 2005, 'Novel', 'Kisah inspiratif anak-anak Belitung yang haus ilmu.', 534, 6, null, null],
+    ['Bumi Manusia', 'Pramoedya Ananta Toer', 'Hasta Mitra', 1980, 'Novel', 'Tetralogi Buru bagian pertama, roman sejarah legendaris.', 535, 4, null, null],
+    ['Fisika Dasar', 'Halliday & Resnick', 'Erlangga', 2019, 'Pendidikan', 'Dasar-dasar fisika untuk SMA dan mahasiswa tingkat awal.', 612, 3, null, null],
+    ['Belajar Python Pemula', 'Ridwan Sanjaya', 'Informatika', 2023, 'Teknologi', 'Tutorial Python dari nol hingga mahir.', 300, 5, null, 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf'],
+    ['Dasar Pemrograman Web', 'Abdul Kadir', 'Andi Publisher', 2022, 'Teknologi', 'HTML, CSS, JavaScript untuk pemula.', 350, 4, null, 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf'],
+    ['Tafsir Al-Quran Juz 30', 'Ust. Quraish Shihab', 'Lentera Hati', 2018, 'Agama', 'Tafsir Juz Amma dengan bahasa sederhana.', 250, 3, null, null],
+    ['Candi-candi Nusantara', 'R. Soekmono', 'Kanisius', 2015, 'Arkeologi', 'Ensiklopedia candi peninggalan Nusantara.', 380, 2, null, null],
+    ['Jurnal Pendidikan Vol 12', 'Tim Redaksi', 'LP3I', 2024, 'Jurnal', 'Kumpulan artikel ilmiah bidang pendidikan.', 180, 2, null, null],
+    ['Komik Sains: Tubuhku', 'Gomdori', 'Elex Media', 2019, 'Komik Edukasi', 'Komik edukatif tentang anatomi tubuh manusia.', 220, 5, null, null],
   ];
   const insertBuku = db.prepare(
-    `INSERT INTO buku (judul,penulis,penerbit,tahun,kategori_id,sinopsis,jumlah_halaman,stok,stok_tersedia,rating,jumlah_rating,dibaca)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`
+    `INSERT INTO buku (judul,penulis,penerbit,tahun,kategori_id,sinopsis,jumlah_halaman,stok,stok_tersedia,rating,jumlah_rating,dibaca,cover_url,pdf_url)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
   );
   const getKat = db.prepare('SELECT id FROM kategori WHERE nama=?');
-  bukuList.forEach(([j, p, pn, t, kat, s, h, st]) => {
+  bukuList.forEach(([j, p, pn, t, kat, s, h, st, coverUrl, pdfUrl]) => {
     const k = getKat.get(kat);
     const rating = +(3.5 + Math.random() * 1.5).toFixed(1);
     const jr = Math.floor(Math.random() * 80) + 5;
     const dibaca = Math.floor(Math.random() * 300) + 20;
-    insertBuku.run(j, p, pn, t, k?.id || null, s, h, st, st, rating, jr, dibaca);
+    insertBuku.run(j, p, pn, t, k?.id || null, s, h, st, st, rating, jr, dibaca, coverUrl, pdfUrl);
   });
 
   // Pengumuman

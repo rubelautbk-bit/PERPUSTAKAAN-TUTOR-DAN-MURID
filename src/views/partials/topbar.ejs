@@ -12,6 +12,10 @@
   </nav>
 
   <div class="actions">
+    <div class="lang-switch" style="display:flex; gap:4px; font-size:0.82rem;">
+      <a href="/bahasa/id" class="<%= (user && user.bahasa === 'id') || !user ? 'active-lang' : '' %>" style="padding:4px 8px;">ID</a>
+      <a href="/bahasa/en" class="<%= user && user.bahasa === 'en' ? 'active-lang' : '' %>" style="padding:4px 8px;">EN</a>
+    </div>
     <button id="themeToggle" class="theme-toggle" title="Toggle tema">Tema</button>
     <% if (user) { %>
       <a href="/<%= user.role %>" class="btn btn-sm btn-secondary"><%= user.name.split(' ')[0] %></a>

@@ -1,7 +1,15 @@
 <div class="book-detail card">
   <div>
-    <div class="cover-lg"><%= buku.judul %></div>
+    <div class="cover-lg" <%= coverUrl ? `style="background-image:url('${coverUrl}'); background-size:cover; background-position:center;"` : '' %>>
+      <% if (!coverUrl) { %><%= buku.judul %><% } %>
+    </div>
+
     <div style="display:grid; gap:8px; margin-top:16px;">
+      <% if (pdfUrl) { %>
+        <a href="/buku/<%= buku.id %>/baca" class="btn btn-warning btn-block">
+          &#128214; Baca Online
+        </a>
+      <% } %>
       <% if (user && user.role === 'murid') { %>
         <form method="POST" action="/murid/pinjam/<%= buku.id %>">
           <button class="btn btn-primary btn-block" <%= buku.stok_tersedia === 0 ? 'disabled' : '' %>>Pinjam Buku</button>
@@ -9,12 +17,12 @@
         <form method="POST" action="/murid/wishlist/<%= buku.id %>">
           <button class="btn btn-secondary btn-block">+ Wishlist</button>
         </form>
-        <% if (buku.file_pdf) { %>
-          <a href="/uploads/<%= buku.file_pdf %>" target="_blank" class="btn btn-warning btn-block">Baca Online</a>
-        <% } %>
       <% } else if (!user) { %>
         <a href="/auth/login" class="btn btn-primary btn-block">Login untuk Meminjam</a>
       <% } %>
+      <a href="/buku/<%= buku.id %>/qr" class="btn btn-secondary btn-block" target="_blank">
+        &#128202; QR Code
+      </a>
     </div>
   </div>
 

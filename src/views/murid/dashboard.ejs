@@ -7,7 +7,8 @@
   <div class="stat"><div class="label">Sedang Dipinjam</div><div class="value"><%= s.pinjam %></div></div>
   <div class="stat accent"><div class="label">Wishlist</div><div class="value"><%= s.wishlist %></div></div>
   <div class="stat blue"><div class="label">Selesai Dibaca</div><div class="value"><%= s.selesai %></div></div>
-  <div class="stat red"><div class="label">Quiz Dikerjakan</div><div class="value"><%= s.quiz %></div></div>
+  <div class="stat"><div class="label">Level</div><div class="value">Lv <%= me ? me.level : 1 %></div></div>
+  <div class="stat red"><div class="label">Poin</div><div class="value"><%= me ? me.poin : 0 %></div></div>
 </div>
 
 <div class="grid-2">
@@ -36,6 +37,31 @@
         <div class="progress mt-1"><div class="bar" style="width: <%= p.persentase %>%"></div></div>
         <small class="text-muted"><%= p.persentase %>% &middot; hal. <%= p.halaman_terakhir %></small>
       </div>
+    <% }) %>
+  </div>
+</div>
+
+<div class="card mt-3">
+  <div class="page-header">
+    <div>
+      <h3 style="margin:0;">&#129504; Rekomendasi Cerdas untukmu</h3>
+      <p class="subtitle">Berdasarkan riwayat baca &amp; wishlist kamu</p>
+    </div>
+  </div>
+  <% if (rekomendasiSmart.length === 0) { %><p class="text-muted">Pinjam buku dulu untuk mendapat rekomendasi yang lebih personal.</p><% } %>
+  <div class="book-grid">
+    <% rekomendasiSmart.forEach(b => { %>
+      <a href="/buku/<%= b.id %>" class="book-card">
+        <div class="book-cover"><%= b.judul %></div>
+        <div class="book-info">
+          <div class="title"><%= b.judul %></div>
+          <div class="author"><%= b.penulis %></div>
+          <div class="meta">
+            <span class="badge" style="font-size:0.7rem;"><%= b.kategori_nama %></span>
+            <span><span class="rating-star">&#9733;</span> <%= b.rating %></span>
+          </div>
+        </div>
+      </a>
     <% }) %>
   </div>
 </div>

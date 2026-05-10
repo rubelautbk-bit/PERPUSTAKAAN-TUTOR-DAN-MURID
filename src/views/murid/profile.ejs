@@ -16,13 +16,26 @@
       <tr><td><strong>Role</strong></td><td><span class="badge"><%= u.role %></span></td></tr>
       <tr><td><strong>Status</strong></td><td><span class="badge <%= u.status==='suspended'?'red':'' %>"><%= u.status %></span></td></tr>
       <tr><td><strong>Bergabung</strong></td><td><%= new Date(u.created_at).toLocaleDateString('id-ID') %></td></tr>
+      <tr><td><strong>Level</strong></td><td><span class="badge blue">Lv <%= u.level %></span></td></tr>
+      <tr><td><strong>Poin</strong></td><td><strong><%= u.poin %></strong> poin</td></tr>
     </table>
 
-    <h4 class="mt-3">Gamifikasi</h4>
+    <h4 class="mt-3">Badge Kamu (<%= badges.length %>)</h4>
+    <% if (badges.length === 0) { %>
+      <p class="text-muted" style="font-size:0.9rem;">Belum ada badge. <a href="/murid/leaderboard">Lihat cara dapat badge</a>.</p>
+    <% } %>
     <div class="row-flex">
-      <span class="badge">Pembaca Aktif</span>
-      <span class="badge blue">Lv 1</span>
-      <span class="badge warn">100 Poin</span>
+      <% badges.forEach(b => { %>
+        <div style="background: var(--brand-light); border-radius:8px; padding:8px 10px; text-align:center;">
+          <div style="font-size:1.3rem;">
+            <% if (b.icon==='crown') { %>&#128081;<% } else if (b.icon==='trophy') { %>&#127942;
+            <% } else if (b.icon==='pen') { %>&#9999;&#65039;<% } else if (b.icon==='book') { %>&#128218;<% } else { %>&#11088;<% } %>
+          </div>
+          <strong style="font-size:0.78rem;"><%= b.nama %></strong>
+        </div>
+      <% }) %>
     </div>
+
+    <a href="/murid/leaderboard" class="btn btn-secondary mt-3">&#127942; Lihat Leaderboard</a>
   </div>
 </div>
