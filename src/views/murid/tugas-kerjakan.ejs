@@ -1,0 +1,31 @@
+<div class="page-header">
+  <div>
+    <a href="/murid/tugas" class="text-muted">&larr; Semua Tugas</a>
+    <h1 style="margin:4px 0;"><%= quiz.judul %></h1>
+    <p class="subtitle"><%= quiz.deskripsi || '' %></p>
+  </div>
+</div>
+
+<% if (soal.length === 0) { %>
+  <div class="card"><p class="text-muted">Belum ada soal pada quiz ini.</p></div>
+<% } else { %>
+  <form method="POST" action="/murid/tugas/<%= quiz.id %>/submit" class="card">
+    <% soal.forEach((s, i) => { %>
+      <div style="padding:12px 0; border-bottom:1px solid var(--border);">
+        <strong><%= i+1 %>. <%= s.soal %></strong>
+        <% ['A','B','C','D'].forEach(opt => { %>
+          <% const isi = s['opsi_' + opt.toLowerCase()]; %>
+          <% if (isi) { %>
+            <div style="padding:6px 0;">
+              <label style="display:flex; gap:8px; align-items:center; cursor:pointer;">
+                <input type="radio" name="soal_<%= s.id %>" value="<%= opt %>" required>
+                <span><strong><%= opt %>.</strong> <%= isi %></span>
+              </label>
+            </div>
+          <% } %>
+        <% }) %>
+      </div>
+    <% }) %>
+    <button class="btn btn-primary mt-2">Kumpulkan Jawaban</button>
+  </form>
+<% } %>

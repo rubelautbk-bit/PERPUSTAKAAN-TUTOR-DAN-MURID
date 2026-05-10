@@ -1,0 +1,53 @@
+<div class="page-header">
+  <div>
+    <a href="/tutor/kelas" class="text-muted">&larr; Semua Kelas</a>
+    <h1 style="margin:4px 0;"><%= kelas.nama %></h1>
+    <p class="subtitle">Kode kelas: <strong><%= kelas.kode %></strong></p>
+  </div>
+</div>
+
+<% if (kelas.deskripsi) { %>
+  <div class="card"><%= kelas.deskripsi %></div>
+<% } %>
+
+<div class="grid-2">
+  <div class="card">
+    <h3>Undang Murid</h3>
+    <form method="POST" action="/tutor/kelas/<%= kelas.id %>/invite">
+      <div class="form-group">
+        <label>Pilih Murid</label>
+        <select name="user_id" class="form-control" required>
+          <option value="">-- Pilih --</option>
+          <% semuaMurid.forEach(m => { %>
+            <option value="<%= m.id %>"><%= m.name %> (<%= m.email %>)</option>
+          <% }) %>
+        </select>
+      </div>
+      <button class="btn btn-primary">Tambahkan</button>
+    </form>
+  </div>
+  <div class="card">
+    <h3>Anggota Kelas (<%= members.length %>)</h3>
+    <% members.forEach(m => { %>
+      <div style="padding:8px 0; border-bottom:1px solid var(--border);">
+        <strong><%= m.name %></strong>
+        <div class="text-muted" style="font-size:0.85rem;"><%= m.email %></div>
+      </div>
+    <% }) %>
+    <% if (members.length===0) { %><p class="text-muted">Belum ada murid.</p><% } %>
+  </div>
+</div>
+
+<div class="card mt-3">
+  <h3>Materi Kelas</h3>
+  <% if (materi.length === 0) { %><p class="text-muted">Belum ada materi untuk kelas ini.</p><% } %>
+  <% materi.forEach(m => { %>
+    <div style="padding:10px 0; border-bottom:1px solid var(--border);">
+      <span class="badge"><%= m.tipe %></span>
+      <strong style="margin-left:6px;"><%= m.judul %></strong>
+      <p class="text-muted" style="margin:4px 0; font-size:0.9rem;"><%= m.deskripsi %></p>
+      <% if (m.file) { %><a href="/uploads/<%= m.file %>" target="_blank" class="btn btn-sm btn-secondary">Buka File</a><% } %>
+      <% if (m.link) { %><a href="<%= m.link %>" target="_blank" class="btn btn-sm btn-secondary">Link</a><% } %>
+    </div>
+  <% }) %>
+</div>

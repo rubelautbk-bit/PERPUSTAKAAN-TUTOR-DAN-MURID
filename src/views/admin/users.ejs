@@ -1,0 +1,27 @@
+<div class="page-header">
+  <div><h1>Manajemen User</h1><p class="subtitle"><%= users.length %> user terdaftar</p></div>
+  <a href="/admin/users/new" class="btn btn-primary">+ Tambah User</a>
+</div>
+
+<table class="tbl">
+  <thead><tr>
+    <th>Nama</th><th>Email</th><th>No HP</th><th>Role</th><th>Status</th><th>Aksi</th>
+  </tr></thead>
+  <tbody>
+    <% users.forEach(u => { %>
+      <tr>
+        <td><strong><%= u.name %></strong></td>
+        <td><%= u.email %></td>
+        <td><%= u.phone || '-' %></td>
+        <td><span class="badge <%= u.role==='admin' ? 'blue' : u.role==='tutor' ? 'warn' : '' %>"><%= u.role %></span></td>
+        <td><span class="badge <%= u.status==='suspended' ? 'red' : '' %>"><%= u.status %></span></td>
+        <td class="row-flex">
+          <a href="/admin/users/<%= u.id %>/edit" class="btn btn-sm btn-secondary">Edit</a>
+          <form method="POST" action="/admin/users/<%= u.id %>?_method=DELETE" onsubmit="return confirm('Hapus user ini?')" style="display:inline;">
+            <button class="btn btn-sm btn-danger">Hapus</button>
+          </form>
+        </td>
+      </tr>
+    <% }) %>
+  </tbody>
+</table>

@@ -1,0 +1,24 @@
+<div class="card">
+  <a href="<%= backPath %>" class="text-muted">&larr; Kembali</a>
+  <span class="badge mt-2"><%= item.kategori %></span>
+  <h1 style="margin:8px 0 4px;"><%= item.judul %></h1>
+  <div class="text-muted mb-2">Oleh <%= item.name %> &middot; <%= new Date(item.created_at).toLocaleDateString('id-ID') %></div>
+  <p style="line-height:1.7; white-space:pre-wrap;"><%= item.isi %></p>
+</div>
+
+<div class="card">
+  <h3>Komentar (<%= komentar.length %>)</h3>
+  <% komentar.forEach(k => { %>
+    <div style="padding:10px 0; border-bottom:1px solid var(--border);">
+      <strong><%= k.name %></strong>
+      <span class="text-muted" style="font-size:0.82rem;"><%= new Date(k.created_at).toLocaleDateString('id-ID') %></span>
+      <p style="margin:4px 0 0;"><%= k.isi %></p>
+    </div>
+  <% }) %>
+  <% if (komentar.length === 0) { %><p class="text-muted">Belum ada komentar.</p><% } %>
+
+  <form method="POST" action="<%= backPath %>/<%= item.id %>/komentar" class="mt-2">
+    <div class="form-group"><label>Tulis Komentar</label><textarea name="isi" class="form-control" required></textarea></div>
+    <button class="btn btn-primary">Kirim</button>
+  </form>
+</div>

@@ -1,0 +1,33 @@
+<div class="page-header"><h1>Quiz & Tugas</h1></div>
+
+<div class="grid-2">
+  <div class="card">
+    <h3>Buat Quiz</h3>
+    <form method="POST" action="/tutor/quiz">
+      <div class="form-group"><label>Judul</label><input name="judul" class="form-control" required/></div>
+      <div class="form-group"><label>Deskripsi</label><textarea name="deskripsi" class="form-control"></textarea></div>
+      <div class="form-group">
+        <label>Kelas</label>
+        <select name="kelas_id" class="form-control">
+          <option value="">-- Publik --</option>
+          <% kelasList.forEach(k => { %><option value="<%= k.id %>"><%= k.nama %></option><% }) %>
+        </select>
+      </div>
+      <div class="form-group"><label>Deadline</label><input type="date" name="deadline" class="form-control"/></div>
+      <button class="btn btn-primary">Buat</button>
+    </form>
+  </div>
+  <div class="card">
+    <h3>Daftar Quiz</h3>
+    <% list.forEach(q => { %>
+      <div style="padding:10px 0; border-bottom:1px solid var(--border);">
+        <a href="/tutor/quiz/<%= q.id %>" style="font-weight:600; color:var(--text);"><%= q.judul %></a>
+        <div class="text-muted" style="font-size:0.85rem;">
+          <%= q.kelas_nama || 'Publik' %> &middot; <%= q.jumlah_soal %> soal
+          <% if (q.deadline) { %> &middot; Deadline: <%= q.deadline %><% } %>
+        </div>
+      </div>
+    <% }) %>
+    <% if (list.length === 0) { %><p class="text-muted">Belum ada quiz.</p><% } %>
+  </div>
+</div>

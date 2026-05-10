@@ -1,0 +1,10 @@
+<h3 class="text-center mt-0">Reset Password</h3>
+<p class="text-muted text-center" style="margin-bottom:20px;">Masukkan email akun Anda.</p>
+<form method="POST" action="/auth/forgot">
+  <div class="form-group">
+    <label>Email</label>
+    <input type="email" name="email" class="form-control" required />
+  </div>
+  <button type="submit" class="btn btn-primary btn-block">Kirim Tautan Reset</button>
+</form>
+<p class="text-center mt-2"><a href="/auth/login">Kembali ke Login</a></p>

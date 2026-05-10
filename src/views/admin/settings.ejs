@@ -1,0 +1,55 @@
+<div class="page-header"><h1>Pengaturan Website</h1></div>
+
+<form method="POST" action="/admin/settings" class="card">
+  <div class="form-row">
+    <div class="form-group">
+      <label>Nama Website</label>
+      <input name="site_name" class="form-control" value="<%= siteName %>" />
+    </div>
+    <div class="form-group">
+      <label>Email Kontak</label>
+      <input name="contact_email" class="form-control" value="info@rubela.id" />
+    </div>
+    <div class="form-group">
+      <label>WhatsApp</label>
+      <input name="whatsapp" class="form-control" value="0812-0000-0000" />
+    </div>
+    <div class="form-group">
+      <label>Tema Warna</label>
+      <input type="color" name="theme" class="form-control" value="#1e7a5a" />
+    </div>
+  </div>
+  <div class="form-group">
+    <label>Logo</label>
+    <input type="file" name="logo" accept="image/*" class="form-control" />
+  </div>
+  <div class="form-group">
+    <label>Banner</label>
+    <input type="file" name="banner" accept="image/*" class="form-control" />
+  </div>
+
+  <h4 class="mt-3">SMTP Email</h4>
+  <div class="form-row">
+    <div class="form-group">
+      <label>SMTP Host</label>
+      <input name="smtp_host" class="form-control" placeholder="smtp.gmail.com" />
+    </div>
+    <div class="form-group">
+      <label>SMTP Port</label>
+      <input name="smtp_port" class="form-control" placeholder="587" />
+    </div>
+    <div class="form-group">
+      <label>SMTP User</label>
+      <input name="smtp_user" class="form-control" />
+    </div>
+    <div class="form-group">
+      <label>SMTP Password</label>
+      <input type="password" name="smtp_pass" class="form-control" />
+    </div>
+  </div>
+
+  <div class="row-flex mt-2">
+    <button class="btn btn-primary">Simpan Pengaturan</button>
+    <button type="button" class="btn btn-secondary" onclick="alert('Backup database dimulai (demo)')">Backup Database</button>
+  </div>
+</form>

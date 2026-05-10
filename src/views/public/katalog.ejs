@@ -1,0 +1,61 @@
+<div class="page-header">
+  <div>
+    <h1>Katalog Buku</h1>
+    <p class="subtitle"><%= buku.length %> buku ditemukan</p>
+  </div>
+</div>
+
+<form method="GET" class="filter-bar">
+  <input type="text" name="q" class="form-control" placeholder="Cari judul, penulis, sinopsis..." value="<%= filters.q %>" />
+  <select name="kategori" class="form-control">
+    <option value="">Semua Kategori</option>
+    <% kategoriList.forEach(k => { %>
+      <option value="<%= k.nama %>" <%= filters.kategori === k.nama ? 'selected' : '' %>><%= k.nama %></option>
+    <% }) %>
+  </select>
+  <input type="text" name="penulis" class="form-control" placeholder="Penulis" value="<%= filters.penulis %>" />
+  <input type="number" name="tahun" class="form-control" placeholder="Tahun" value="<%= filters.tahun %>" />
+  <input type="text" name="isbn" class="form-control" placeholder="ISBN" value="<%= filters.isbn %>" />
+  <select name="bahasa" class="form-control">
+    <option value="">Semua Bahasa</option>
+    <option value="Indonesia" <%= filters.bahasa === 'Indonesia' ? 'selected' : '' %>>Indonesia</option>
+    <option value="Inggris" <%= filters.bahasa === 'Inggris' ? 'selected' : '' %>>Inggris</option>
+  </select>
+  <select name="status" class="form-control">
+    <option value="">Semua Status</option>
+    <option value="tersedia" <%= filters.status === 'tersedia' ? 'selected' : '' %>>Tersedia</option>
+    <option value="habis" <%= filters.status === 'habis' ? 'selected' : '' %>>Habis</option>
+  </select>
+  <button type="submit" class="btn btn-primary">Cari</button>
+</form>
+
+<% if (buku.length === 0) { %>
+  <div class="card text-center" style="padding:50px;">
+    <h3>Tidak ada buku ditemukan</h3>
+    <p class="text-muted">Coba ubah kata kunci atau filter pencarian Anda.</p>
+  </div>
+<% } else { %>
+  <div class="book-grid">
+    <% buku.forEach(b => { %>
+      <a href="/buku/<%= b.id %>" class="book-card">
+        <div class="book-cover"><%= b.judul %></div>
+        <div class="book-info">
+          <div class="title"><%= b.judul %></div>
+          <div class="author"><%= b.penulis %></div>
+          <div class="meta">
+            <span class="badge"><%= b.kategori_nama || '-' %></span>
+            <span><span class="rating-star">&#9733;</span> <%= b.rating %></span>
+          </div>
+          <div class="meta">
+            <% if (b.stok_tersedia > 0) { %>
+              <span class="badge">Tersedia (<%= b.stok_tersedia %>)</span>
+            <% } else { %>
+              <span class="badge red">Habis</span>
+            <% } %>
+            <span><%= b.tahun %></span>
+          </div>
+        </div>
+      </a>
+    <% }) %>
+  </div>
+<% } %>

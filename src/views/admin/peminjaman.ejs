@@ -1,0 +1,28 @@
+<div class="page-header"><h1>Sistem Peminjaman</h1></div>
+
+<table class="tbl">
+  <thead><tr>
+    <th>Murid</th><th>Buku</th><th>Pinjam</th><th>Kembali</th><th>Status</th><th>Denda</th><th>Aksi</th>
+  </tr></thead>
+  <tbody>
+    <% rows.forEach(r => { %>
+      <tr>
+        <td><%= r.user_name %></td>
+        <td><%= r.judul %></td>
+        <td><%= r.tanggal_pinjam %></td>
+        <td><%= r.tanggal_kembali %></td>
+        <td><span class="badge <%= r.status==='menunggu' ? 'warn' : r.status==='ditolak' ? 'red' : r.status==='dikembalikan' ? 'gray' : '' %>"><%= r.status %></span></td>
+        <td><%= r.denda > 0 ? 'Rp ' + r.denda.toLocaleString('id-ID') : '-' %></td>
+        <td class="row-flex">
+          <% if (r.status === 'menunggu') { %>
+            <form method="POST" action="/admin/peminjaman/<%= r.id %>/approve"><button class="btn btn-sm btn-primary">Setuju</button></form>
+            <form method="POST" action="/admin/peminjaman/<%= r.id %>/reject"><button class="btn btn-sm btn-danger">Tolak</button></form>
+          <% } else if (r.status === 'dipinjam') { %>
+            <form method="POST" action="/admin/peminjaman/<%= r.id %>/return"><button class="btn btn-sm btn-secondary">Dikembalikan</button></form>
+          <% } %>
+        </td>
+      </tr>
+    <% }) %>
+    <% if (rows.length === 0) { %><tr><td colspan="7" class="text-center text-muted">Belum ada peminjaman.</td></tr><% } %>
+  </tbody>
+</table>

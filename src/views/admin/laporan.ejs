@@ -1,0 +1,39 @@
+<div class="page-header">
+  <h1>Laporan & Analytics</h1>
+  <a href="/admin/laporan/export.csv" class="btn btn-primary">Export CSV</a>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <h3>Top 10 Buku</h3>
+    <table class="tbl">
+      <thead><tr><th>Judul</th><th>Dibaca</th><th>Rating</th></tr></thead>
+      <tbody>
+        <% bukuTop.forEach(b => { %>
+          <tr><td><%= b.judul %></td><td><%= b.dibaca %></td><td><span class="rating-star">&#9733;</span> <%= b.rating %></td></tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <div class="card">
+    <h3>Top 10 Murid Aktif</h3>
+    <table class="tbl">
+      <thead><tr><th>Nama</th><th>Total Pinjam</th></tr></thead>
+      <tbody>
+        <% muridTop.forEach(m => { %>
+          <tr><td><%= m.name %></td><td><%= m.total %></td></tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card mt-3">
+  <h3>Export Lainnya</h3>
+  <p class="text-muted">Export data untuk dianalisa di luar sistem.</p>
+  <div class="row-flex">
+    <a href="/admin/laporan/export.csv" class="btn btn-secondary">CSV Buku</a>
+    <button class="btn btn-secondary" disabled title="Demo">PDF (coming soon)</button>
+    <button class="btn btn-secondary" disabled title="Demo">Excel (coming soon)</button>
+  </div>
+</div>

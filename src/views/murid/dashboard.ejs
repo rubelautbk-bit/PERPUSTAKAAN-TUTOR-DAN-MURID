@@ -1,0 +1,70 @@
+<div class="page-header">
+  <div><h1>Dashboard Murid</h1><p class="subtitle">Halo, <%= user.name %>! Selamat membaca.</p></div>
+  <a href="/katalog" class="btn btn-primary">Cari Buku</a>
+</div>
+
+<div class="stat-grid">
+  <div class="stat"><div class="label">Sedang Dipinjam</div><div class="value"><%= s.pinjam %></div></div>
+  <div class="stat accent"><div class="label">Wishlist</div><div class="value"><%= s.wishlist %></div></div>
+  <div class="stat blue"><div class="label">Selesai Dibaca</div><div class="value"><%= s.selesai %></div></div>
+  <div class="stat red"><div class="label">Quiz Dikerjakan</div><div class="value"><%= s.quiz %></div></div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="page-header">
+      <h3 style="margin:0;">Buku Dipinjam</h3>
+      <a href="/murid/buku-saya" class="btn btn-sm btn-secondary">Lihat semua</a>
+    </div>
+    <% if (bukuAktif.length === 0) { %>
+      <p class="text-muted">Belum ada buku dipinjam. <a href="/katalog">Jelajahi katalog</a></p>
+    <% } %>
+    <% bukuAktif.forEach(p => { %>
+      <div style="padding:10px 0; border-bottom:1px solid var(--border);">
+        <strong><%= p.judul %></strong>
+        <div class="text-muted" style="font-size:0.85rem;">Kembalikan sebelum: <%= p.tanggal_kembali %></div>
+      </div>
+    <% }) %>
+  </div>
+
+  <div class="card">
+    <h3>Progress Membaca</h3>
+    <% if (progress.length === 0) { %><p class="text-muted">Belum ada progress.</p><% } %>
+    <% progress.forEach(p => { %>
+      <div style="padding:8px 0;">
+        <strong><%= p.judul %></strong>
+        <div class="progress mt-1"><div class="bar" style="width: <%= p.persentase %>%"></div></div>
+        <small class="text-muted"><%= p.persentase %>% &middot; hal. <%= p.halaman_terakhir %></small>
+      </div>
+    <% }) %>
+  </div>
+</div>
+
+<div class="grid-2 mt-3">
+  <div class="card">
+    <h3>Rekomendasi Tutor</h3>
+    <% if (rekomendasi.length === 0) { %><p class="text-muted">Belum ada rekomendasi.</p><% } %>
+    <% rekomendasi.forEach(r => { %>
+      <div style="padding:10px 0; border-bottom:1px solid var(--border);">
+        <a href="/buku/<%= r.buku_id %>" style="font-weight:600; color:var(--text);"><%= r.judul %></a>
+        <div class="text-muted" style="font-size:0.85rem;">Direkomendasikan oleh <%= r.tutor_name %></div>
+        <% if (r.catatan) { %><p style="margin:4px 0; font-size:0.9rem;">&quot;<%= r.catatan %>&quot;</p><% } %>
+      </div>
+    <% }) %>
+  </div>
+
+  <div class="card">
+    <div class="page-header">
+      <h3 style="margin:0;">Notifikasi</h3>
+      <a href="/murid/notifikasi" class="btn btn-sm btn-secondary">Semua</a>
+    </div>
+    <% if (notif.length === 0) { %><p class="text-muted">Tidak ada notifikasi.</p><% } %>
+    <% notif.forEach(n => { %>
+      <div style="padding:8px 0; border-bottom:1px solid var(--border);">
+        <strong><%= n.judul %></strong>
+        <p style="margin:4px 0; font-size:0.9rem;"><%= n.pesan %></p>
+        <small class="text-muted"><%= new Date(n.created_at).toLocaleDateString('id-ID') %></small>
+      </div>
+    <% }) %>
+  </div>
+</div>

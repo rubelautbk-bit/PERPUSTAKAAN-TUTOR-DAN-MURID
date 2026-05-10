@@ -1,0 +1,24 @@
+<header class="topbar">
+  <a href="/" class="brand">
+    <span class="logo">RB</span>
+    <span>Rubela Library</span>
+  </a>
+
+  <nav>
+    <a href="/" class="<%= currentPath === '/' ? 'active' : '' %>">Beranda</a>
+    <a href="/katalog" class="<%= currentPath.startsWith('/katalog') ? 'active' : '' %>">Katalog</a>
+    <a href="/pengumuman" class="<%= currentPath.startsWith('/pengumuman') ? 'active' : '' %>">Pengumuman</a>
+    <a href="/tentang" class="<%= currentPath === '/tentang' ? 'active' : '' %>">Tentang</a>
+  </nav>
+
+  <div class="actions">
+    <button id="themeToggle" class="theme-toggle" title="Toggle tema">Tema</button>
+    <% if (user) { %>
+      <a href="/<%= user.role %>" class="btn btn-sm btn-secondary"><%= user.name.split(' ')[0] %></a>
+      <a href="/auth/logout" class="btn btn-sm btn-primary">Keluar</a>
+    <% } else { %>
+      <a href="/auth/login" class="btn btn-sm btn-secondary">Masuk</a>
+      <a href="/auth/register" class="btn btn-sm btn-primary">Daftar</a>
+    <% } %>
+  </div>
+</header>

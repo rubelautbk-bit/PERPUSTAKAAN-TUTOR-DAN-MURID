@@ -1,0 +1,20 @@
+<div class="page-header">
+  <div>
+    <h1>Pengumuman & Berita</h1>
+    <p class="subtitle">Update terbaru dari perpustakaan</p>
+  </div>
+</div>
+
+<div class="grid-3">
+  <% list.forEach(p => { %>
+    <div class="card">
+      <span class="badge"><%= p.tipe %></span>
+      <h3 style="margin:8px 0 4px;"><%= p.judul %></h3>
+      <div class="text-muted" style="font-size:0.85rem;">
+        Oleh <%= p.author || 'Admin' %> &middot; <%= new Date(p.created_at).toLocaleDateString('id-ID') %>
+      </div>
+      <p style="margin-top:8px;"><%= p.isi.substring(0,120) %>...</p>
+      <a href="/pengumuman/<%= p.id %>" class="btn btn-sm btn-secondary">Baca</a>
+    </div>
+  <% }) %>
+</div>

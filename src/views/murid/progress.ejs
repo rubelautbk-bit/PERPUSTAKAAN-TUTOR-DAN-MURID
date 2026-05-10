@@ -1,0 +1,47 @@
+<div class="page-header"><h1>Progress Belajar</h1></div>
+
+<div class="grid-2">
+  <div class="card">
+    <h3>Update Progress</h3>
+    <form method="POST" action="/murid/progress">
+      <div class="form-group">
+        <label>Buku</label>
+        <select name="buku_id" class="form-control" required>
+          <% bukuList.forEach(b => { %>
+            <option value="<%= b.id %>"><%= b.judul %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="form-group"><label>Halaman Terakhir Dibaca</label><input type="number" name="halaman_terakhir" class="form-control" min="0" required /></div>
+      <button class="btn btn-primary">Simpan</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h3>Target Mingguan</h3>
+    <div class="progress mt-2"><div class="bar" style="width: 65%;"></div></div>
+    <p class="text-muted mt-1">65% &middot; 3 dari 5 buku target minggu ini</p>
+
+    <h4 class="mt-3">Statistik</h4>
+    <ul>
+      <li>Total buku dibaca: <strong><%= rows.length %></strong></li>
+      <li>Halaman total: <strong><%= rows.reduce((a,b)=>a+b.halaman_terakhir,0) %></strong></li>
+      <li>Rata-rata progress: <strong><%= rows.length ? Math.round(rows.reduce((a,b)=>a+b.persentase,0)/rows.length) : 0 %>%</strong></li>
+    </ul>
+  </div>
+</div>
+
+<div class="card mt-3">
+  <h3>Progress Setiap Buku</h3>
+  <% if (rows.length === 0) { %><p class="text-muted">Belum ada progress baca.</p><% } %>
+  <% rows.forEach(r => { %>
+    <div style="padding:10px 0; border-bottom:1px solid var(--border);">
+      <div class="row-flex" style="justify-content:space-between;">
+        <strong><%= r.judul %></strong>
+        <span class="text-muted" style="font-size:0.85rem;">Hal. <%= r.halaman_terakhir %>/<%= r.jumlah_halaman %></span>
+      </div>
+      <div class="progress mt-1"><div class="bar" style="width: <%= r.persentase %>%"></div></div>
+      <small class="text-muted"><%= r.persentase %>% &middot; update <%= new Date(r.updated_at).toLocaleDateString('id-ID') %></small>
+    </div>
+  <% }) %>
+</div>

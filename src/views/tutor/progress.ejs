@@ -1,0 +1,20 @@
+<div class="page-header"><h1>Progress Murid</h1></div>
+
+<table class="tbl">
+  <thead><tr><th>Murid</th><th>Buku</th><th>Halaman</th><th>Progress</th><th>Terakhir</th></tr></thead>
+  <tbody>
+    <% rows.forEach(r => { %>
+      <tr>
+        <td><%= r.name %></td>
+        <td><%= r.judul %></td>
+        <td><%= r.halaman_terakhir %></td>
+        <td>
+          <div class="progress"><div class="bar" style="width: <%= r.persentase %>%"></div></div>
+          <small><%= r.persentase %>%</small>
+        </td>
+        <td class="text-muted" style="font-size:0.85rem;"><%= new Date(r.updated_at).toLocaleDateString('id-ID') %></td>
+      </tr>
+    <% }) %>
+    <% if (rows.length === 0) { %><tr><td colspan="5" class="text-muted text-center">Belum ada data progress membaca.</td></tr><% } %>
+  </tbody>
+</table>

@@ -1,0 +1,26 @@
+<div class="page-header">
+  <h1>Kelas Saya</h1>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <h3>Buat Kelas Baru</h3>
+    <form method="POST" action="/tutor/kelas">
+      <div class="form-group"><label>Nama Kelas</label><input name="nama" class="form-control" required/></div>
+      <div class="form-group"><label>Kode Kelas (unik)</label><input name="kode" class="form-control" placeholder="MTK01" required/></div>
+      <div class="form-group"><label>Deskripsi</label><textarea name="deskripsi" class="form-control"></textarea></div>
+      <button class="btn btn-primary">Buat Kelas</button>
+    </form>
+  </div>
+  <div class="card">
+    <h3>Daftar Kelas</h3>
+    <% if (list.length === 0) { %><p class="text-muted">Belum ada kelas.</p><% } %>
+    <% list.forEach(k => { %>
+      <div style="padding:12px 0; border-bottom:1px solid var(--border);">
+        <a href="/tutor/kelas/<%= k.id %>" style="font-weight:600; color:var(--text);"><%= k.nama %></a>
+        <div class="text-muted" style="font-size:0.85rem;">Kode: <strong><%= k.kode %></strong> &middot; <%= k.jumlah %> murid</div>
+        <% if (k.deskripsi) { %><p style="margin:4px 0 0; font-size:0.9rem;"><%= k.deskripsi %></p><% } %>
+      </div>
+    <% }) %>
+  </div>
+</div>

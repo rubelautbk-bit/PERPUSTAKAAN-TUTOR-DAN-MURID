@@ -1,0 +1,27 @@
+<div class="page-header">
+  <div><h1>Manajemen Buku</h1><p class="subtitle"><%= buku.length %> buku dalam koleksi</p></div>
+  <a href="/admin/buku/new" class="btn btn-primary">+ Tambah Buku</a>
+</div>
+
+<table class="tbl">
+  <thead><tr><th>Judul</th><th>Penulis</th><th>Kategori</th><th>Tahun</th><th>Stok</th><th>Rating</th><th>Aksi</th></tr></thead>
+  <tbody>
+    <% buku.forEach(b => { %>
+      <tr>
+        <td><strong><%= b.judul %></strong></td>
+        <td><%= b.penulis %></td>
+        <td><span class="badge"><%= b.kategori_nama || '-' %></span></td>
+        <td><%= b.tahun %></td>
+        <td><%= b.stok_tersedia %>/<%= b.stok %></td>
+        <td><span class="rating-star">&#9733;</span> <%= b.rating %></td>
+        <td class="row-flex">
+          <a href="/buku/<%= b.id %>" class="btn btn-sm btn-secondary">Lihat</a>
+          <a href="/admin/buku/<%= b.id %>/edit" class="btn btn-sm btn-secondary">Edit</a>
+          <form method="POST" action="/admin/buku/<%= b.id %>?_method=DELETE" onsubmit="return confirm('Hapus buku?')" style="display:inline;">
+            <button class="btn btn-sm btn-danger">Hapus</button>
+          </form>
+        </td>
+      </tr>
+    <% }) %>
+  </tbody>
+</table>

@@ -1,0 +1,25 @@
+<div class="page-header"><h1>Tugas & Quiz</h1></div>
+
+<table class="tbl">
+  <thead><tr><th>Judul</th><th>Tutor</th><th>Deadline</th><th>Status</th><th>Nilai</th><th>Aksi</th></tr></thead>
+  <tbody>
+    <% list.forEach(q => { %>
+      <tr>
+        <td><strong><%= q.judul %></strong><div class="text-muted" style="font-size:0.82rem;"><%= q.deskripsi %></div></td>
+        <td><%= q.tutor %></td>
+        <td><%= q.deadline || '-' %></td>
+        <td>
+          <% if (q.selesai) { %><span class="badge">Selesai</span>
+          <% } else { %><span class="badge warn">Belum</span><% } %>
+        </td>
+        <td><%= q.nilai !== null && q.nilai !== undefined ? q.nilai : '-' %></td>
+        <td>
+          <% if (!q.selesai) { %>
+            <a href="/murid/tugas/<%= q.id %>" class="btn btn-sm btn-primary">Kerjakan</a>
+          <% } %>
+        </td>
+      </tr>
+    <% }) %>
+    <% if (list.length === 0) { %><tr><td colspan="6" class="text-muted text-center">Belum ada tugas atau quiz.</td></tr><% } %>
+  </tbody>
+</table>

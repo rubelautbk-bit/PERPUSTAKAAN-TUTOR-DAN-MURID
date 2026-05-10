@@ -1,0 +1,27 @@
+<div class="page-header"><h1>Buku Saya</h1></div>
+
+<table class="tbl">
+  <thead><tr>
+    <th>Buku</th><th>Pinjam</th><th>Kembali</th><th>Status</th><th>Denda</th><th>Aksi</th>
+  </tr></thead>
+  <tbody>
+    <% rows.forEach(r => { %>
+      <tr>
+        <td><strong><%= r.judul %></strong><div class="text-muted" style="font-size:0.82rem;"><%= r.penulis %></div></td>
+        <td><%= r.tanggal_pinjam %></td>
+        <td><%= r.tanggal_kembali %></td>
+        <td><span class="badge <%= r.status==='menunggu' ? 'warn' : r.status==='ditolak' ? 'red' : r.status==='dikembalikan' ? 'gray' : '' %>"><%= r.status %></span></td>
+        <td><%= r.denda > 0 ? 'Rp ' + r.denda.toLocaleString('id-ID') : '-' %></td>
+        <td>
+          <% if (r.status === 'dipinjam') { %>
+            <form method="POST" action="/murid/perpanjang/<%= r.id %>" style="display:inline;">
+              <button class="btn btn-sm btn-secondary">Perpanjang</button>
+            </form>
+          <% } %>
+          <a href="/buku/<%= r.buku_id %>" class="btn btn-sm btn-secondary">Lihat Buku</a>
+        </td>
+      </tr>
+    <% }) %>
+    <% if (rows.length === 0) { %><tr><td colspan="6" class="text-muted text-center">Belum ada peminjaman. <a href="/katalog">Jelajahi katalog</a></td></tr><% } %>
+  </tbody>
+</table>

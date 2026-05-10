@@ -1,0 +1,20 @@
+<div class="page-header">
+  <h1>Manajemen Denda</h1>
+  <div>Total: <strong>Rp <%= total.toLocaleString('id-ID') %></strong></div>
+</div>
+
+<table class="tbl">
+  <thead><tr><th>Murid</th><th>Buku</th><th>Tgl Kembali</th><th>Dikembalikan</th><th>Denda</th></tr></thead>
+  <tbody>
+    <% rows.forEach(r => { %>
+      <tr>
+        <td><%= r.user_name %></td>
+        <td><%= r.judul %></td>
+        <td><%= r.tanggal_kembali %></td>
+        <td><%= r.tanggal_dikembalikan || '-' %></td>
+        <td><strong>Rp <%= r.denda.toLocaleString('id-ID') %></strong></td>
+      </tr>
+    <% }) %>
+    <% if (rows.length === 0) { %><tr><td colspan="5" class="text-center text-muted">Belum ada denda.</td></tr><% } %>
+  </tbody>
+</table>

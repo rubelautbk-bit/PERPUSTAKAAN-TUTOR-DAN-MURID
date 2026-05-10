@@ -1,0 +1,41 @@
+<div class="page-header">
+  <div><h1>Dashboard Tutor</h1><p class="subtitle">Halo, <%= user.name %>! Selamat mengajar.</p></div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat"><div class="label">Kelas</div><div class="value"><%= s.kelas %></div></div>
+  <div class="stat blue"><div class="label">Total Murid</div><div class="value"><%= s.murid %></div></div>
+  <div class="stat accent"><div class="label">Materi</div><div class="value"><%= s.materi %></div></div>
+  <div class="stat"><div class="label">Rekomendasi Buku</div><div class="value"><%= s.rekomendasi %></div></div>
+  <div class="stat red"><div class="label">Quiz</div><div class="value"><%= s.quiz %></div></div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="page-header">
+      <h3 style="margin:0;">Kelas Saya</h3>
+      <a href="/tutor/kelas" class="btn btn-sm btn-secondary">Lihat semua</a>
+    </div>
+    <% kelasList.forEach(k => { %>
+      <div style="padding:10px 0; border-bottom:1px solid var(--border);">
+        <a href="/tutor/kelas/<%= k.id %>" style="font-weight:600; color:var(--text);"><%= k.nama %></a>
+        <div class="text-muted" style="font-size:0.85rem;">Kode: <%= k.kode %> &middot; <%= k.jumlah %> murid</div>
+      </div>
+    <% }) %>
+    <% if (kelasList.length === 0) { %><p class="text-muted">Belum ada kelas. <a href="/tutor/kelas">Buat kelas</a></p><% } %>
+  </div>
+
+  <div class="card">
+    <div class="page-header">
+      <h3 style="margin:0;">Materi Terbaru</h3>
+      <a href="/tutor/materi" class="btn btn-sm btn-secondary">Kelola</a>
+    </div>
+    <% materiTerbaru.forEach(m => { %>
+      <div style="padding:10px 0; border-bottom:1px solid var(--border);">
+        <span class="badge"><%= m.tipe %></span>
+        <strong style="margin-left:6px;"><%= m.judul %></strong>
+        <div class="text-muted" style="font-size:0.85rem;"><%= m.kelas_nama || 'Publik' %></div>
+      </div>
+    <% }) %>
+  </div>
+</div>

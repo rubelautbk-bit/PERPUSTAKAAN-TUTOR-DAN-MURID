@@ -1,0 +1,78 @@
+<div class="page-header">
+  <div>
+    <h1>Dashboard Admin</h1>
+    <p class="subtitle">Ringkasan aktivitas perpustakaan</p>
+  </div>
+  <div class="row-flex">
+    <a href="/admin/buku/new" class="btn btn-primary">+ Tambah Buku</a>
+    <a href="/admin/pengumuman" class="btn btn-secondary">+ Pengumuman</a>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat"><div class="label">Total Buku</div><div class="value"><%= s.totalBuku %></div></div>
+  <div class="stat accent"><div class="label">Total User</div><div class="value"><%= s.totalUser %></div></div>
+  <div class="stat blue"><div class="label">Murid</div><div class="value"><%= s.totalMurid %></div></div>
+  <div class="stat blue"><div class="label">Tutor</div><div class="value"><%= s.totalTutor %></div></div>
+  <div class="stat"><div class="label">Sedang Dipinjam</div><div class="value"><%= s.totalPinjam %></div></div>
+  <div class="stat accent"><div class="label">Menunggu Approve</div><div class="value"><%= s.totalMenunggu %></div></div>
+  <div class="stat red"><div class="label">Total Denda</div><div class="value">Rp <%= s.totalDenda.toLocaleString('id-ID') %></div></div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <h3>Buku Paling Populer</h3>
+    <div class="bar-chart">
+      <% const max = Math.max(1, ...bukuPopuler.map(b=>b.dibaca)); %>
+      <% bukuPopuler.forEach(b => { %>
+        <div class="bar-row">
+          <div style="font-size:0.9rem;"><%= b.judul %></div>
+          <div class="bar-track"><div class="bar-fill" style="width: <%= (b.dibaca/max*100).toFixed(0) %>%"></div></div>
+          <div class="text-muted text-center"><%= b.dibaca %></div>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Murid Paling Aktif</h3>
+    <table class="tbl">
+      <thead><tr><th>Nama</th><th>Total Pinjam</th></tr></thead>
+      <tbody>
+        <% userAktif.forEach(u => { %>
+          <tr><td><%= u.name %></td><td><%= u.total %></td></tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="grid-2 mt-3">
+  <div class="card">
+    <h3>Tutor Paling Aktif</h3>
+    <table class="tbl">
+      <thead><tr><th>Nama</th><th>Kelas</th><th>Materi</th></tr></thead>
+      <tbody>
+        <% tutorAktif.forEach(t => { %>
+          <tr><td><%= t.name %></td><td><%= t.kelas %></td><td><%= t.materi %></td></tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Peminjaman Terbaru</h3>
+    <table class="tbl">
+      <thead><tr><th>Murid</th><th>Buku</th><th>Status</th></tr></thead>
+      <tbody>
+        <% peminjamanTerbaru.forEach(p => { %>
+          <tr>
+            <td><%= p.user_name %></td>
+            <td><%= p.judul %></td>
+            <td><span class="badge <%= p.status==='menunggu' ? 'warn' : p.status==='ditolak' ? 'red' : p.status==='dikembalikan' ? 'gray' : '' %>"><%= p.status %></span></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>

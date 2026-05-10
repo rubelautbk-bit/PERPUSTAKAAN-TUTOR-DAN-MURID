@@ -1,0 +1,9 @@
+<div class="card">
+  <a href="/pengumuman" class="text-muted">&larr; Semua Pengumuman</a>
+  <span class="badge mt-2"><%= item.tipe %></span>
+  <h1 style="margin:8px 0 4px;"><%= item.judul %></h1>
+  <div class="text-muted mb-2">
+    Oleh <%= item.author || 'Admin' %> &middot; <%= new Date(item.created_at).toLocaleDateString('id-ID') %>
+  </div>
+  <div style="line-height:1.7; white-space:pre-wrap;"><%= item.isi %></div>
+</div>

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title><%= typeof title !== 'undefined' ? title + ' - ' + siteName : siteName %></title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <%- include('../partials/topbar') %>
+
+  <% if (user && ['admin','tutor','murid'].includes(user.role)) { %>
+    <div class="app-shell">
+      <%- include('../partials/sidebar') %>
+      <div class="main">
+        <% if (success && success.length) { %>
+          <div class="alert alert-success"><%= success %></div>
+        <% } %>
+        <% if (error && error.length) { %>
+          <div class="alert alert-error"><%= error %></div>
+        <% } %>
+        <%- body %>
+      </div>
+    </div>
+  <% } else { %>
+    <div class="main" style="max-width:1200px; margin:0 auto;">
+      <% if (success && success.length) { %>
+        <div class="alert alert-success"><%= success %></div>
+      <% } %>
+      <% if (error && error.length) { %>
+        <div class="alert alert-error"><%= error %></div>
+      <% } %>
+      <%- body %>
+    </div>
+    <%- include('../partials/footer') %>
+  <% } %>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>
