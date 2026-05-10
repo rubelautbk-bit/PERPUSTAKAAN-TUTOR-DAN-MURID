@@ -2,7 +2,14 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-const uploadDir = path.join(__dirname, '../../public/uploads');
+// Di Vercel, kita tidak bisa menulis ke public/uploads (read-only).
+// Gunakan /tmp (ephemeral - file hilang tiap cold start).
+// Untuk production, pakai S3 / Cloudinary / UploadThing.
+const isVercel = !!process.env.VERCEL;
+const uploadDir = isVercel
+  ? '/tmp/rubela-uploads'
+  : path.join(__dirname, '../../public/uploads');
+
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
 const storage = multer.diskStorage({
@@ -16,7 +23,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 25 * 1024 * 1024 }, // 25MB
+  limits: { fileSize: 25 * 1024 * 1024 },
 });
 
 module.exports = upload;
