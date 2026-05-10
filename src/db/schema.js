@@ -239,6 +239,20 @@ module.exports = function initSchema(db) {
       UNIQUE(user_id, kode),
       FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS highlight (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      buku_id INTEGER NOT NULL,
+      halaman INTEGER NOT NULL,
+      teks TEXT NOT NULL,
+      warna TEXT DEFAULT 'yellow',
+      rects_json TEXT,
+      catatan TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY(buku_id) REFERENCES buku(id) ON DELETE CASCADE
+    );
   `);
 
   // Simple migration: tambahkan kolom baru kalau DB sudah ada (tanpa IF NOT EXISTS di ALTER)

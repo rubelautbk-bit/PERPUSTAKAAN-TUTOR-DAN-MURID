@@ -1,10 +1,10 @@
 <div class="page-header">
   <div>
-    <a href="/buku/<%= buku.id %>" class="text-muted">&larr; Kembali</a>
-    <h1 style="margin:4px 0;">QR Code: <%= buku.judul %></h1>
-    <p class="subtitle">Scan untuk akses langsung buku ini</p>
+    <a href="/buku/<%= buku.id %>" class="text-muted">&larr; <%= t('common.back') %></a>
+    <h1 style="margin:4px 0;"><%= t('qr.title', { title: buku.judul }) %></h1>
+    <p class="subtitle"><%= t('qr.subtitle') %></p>
   </div>
-  <button onclick="window.print()" class="btn btn-primary">Cetak</button>
+  <button onclick="window.print()" class="btn btn-primary"><%= t('common.print') %></button>
 </div>
 
 <div class="card text-center" style="padding:40px;">

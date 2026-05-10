@@ -1,38 +1,38 @@
 <div class="page-header">
   <div>
-    <h1>Katalog Buku</h1>
-    <p class="subtitle"><%= buku.length %> buku ditemukan</p>
+    <h1><%= t('catalog.title') %></h1>
+    <p class="subtitle"><%= t('catalog.found', { n: buku.length }) %></p>
   </div>
 </div>
 
 <form method="GET" class="filter-bar">
-  <input type="text" name="q" class="form-control" placeholder="Cari judul, penulis, sinopsis..." value="<%= filters.q %>" />
+  <input type="text" name="q" class="form-control" placeholder="<%= t('catalog.searchPlaceholder') %>" value="<%= filters.q %>" />
   <select name="kategori" class="form-control">
-    <option value="">Semua Kategori</option>
+    <option value=""><%= t('catalog.allCategories') %></option>
     <% kategoriList.forEach(k => { %>
       <option value="<%= k.nama %>" <%= filters.kategori === k.nama ? 'selected' : '' %>><%= k.nama %></option>
     <% }) %>
   </select>
-  <input type="text" name="penulis" class="form-control" placeholder="Penulis" value="<%= filters.penulis %>" />
-  <input type="number" name="tahun" class="form-control" placeholder="Tahun" value="<%= filters.tahun %>" />
-  <input type="text" name="isbn" class="form-control" placeholder="ISBN" value="<%= filters.isbn %>" />
+  <input type="text" name="penulis" class="form-control" placeholder="<%= t('catalog.authorPlaceholder') %>" value="<%= filters.penulis %>" />
+  <input type="number" name="tahun" class="form-control" placeholder="<%= t('catalog.yearPlaceholder') %>" value="<%= filters.tahun %>" />
+  <input type="text" name="isbn" class="form-control" placeholder="<%= t('catalog.isbnPlaceholder') %>" value="<%= filters.isbn %>" />
   <select name="bahasa" class="form-control">
-    <option value="">Semua Bahasa</option>
+    <option value=""><%= t('catalog.allLanguages') %></option>
     <option value="Indonesia" <%= filters.bahasa === 'Indonesia' ? 'selected' : '' %>>Indonesia</option>
-    <option value="Inggris" <%= filters.bahasa === 'Inggris' ? 'selected' : '' %>>Inggris</option>
+    <option value="Inggris" <%= filters.bahasa === 'Inggris' ? 'selected' : '' %>>English</option>
   </select>
   <select name="status" class="form-control">
-    <option value="">Semua Status</option>
-    <option value="tersedia" <%= filters.status === 'tersedia' ? 'selected' : '' %>>Tersedia</option>
-    <option value="habis" <%= filters.status === 'habis' ? 'selected' : '' %>>Habis</option>
+    <option value=""><%= t('catalog.allStatus') %></option>
+    <option value="tersedia" <%= filters.status === 'tersedia' ? 'selected' : '' %>><%= t('catalog.available') %></option>
+    <option value="habis" <%= filters.status === 'habis' ? 'selected' : '' %>><%= t('catalog.outOfStock') %></option>
   </select>
-  <button type="submit" class="btn btn-primary">Cari</button>
+  <button type="submit" class="btn btn-primary"><%= t('common.search') %></button>
 </form>
 
 <% if (buku.length === 0) { %>
   <div class="card text-center" style="padding:50px;">
-    <h3>Tidak ada buku ditemukan</h3>
-    <p class="text-muted">Coba ubah kata kunci atau filter pencarian Anda.</p>
+    <h3><%= t('catalog.noResults') %></h3>
+    <p class="text-muted"><%= t('catalog.noResultsDesc') %></p>
   </div>
 <% } else { %>
   <div class="book-grid">
@@ -48,9 +48,9 @@
           </div>
           <div class="meta">
             <% if (b.stok_tersedia > 0) { %>
-              <span class="badge">Tersedia (<%= b.stok_tersedia %>)</span>
+              <span class="badge"><%= t('catalog.availableWithStock', { n: b.stok_tersedia }) %></span>
             <% } else { %>
-              <span class="badge red">Habis</span>
+              <span class="badge red"><%= t('catalog.outOfStock') %></span>
             <% } %>
             <span><%= b.tahun %></span>
           </div>

@@ -136,12 +136,16 @@ router.get('/buku/:id/baca', (req, res) => {
     db.prepare('UPDATE buku SET dibaca = dibaca + 1 WHERE id=?').run(buku.id);
   }
 
-  // Ambil bookmark + progress existing (cuma kalau login murid)
+  // Ambil bookmark + highlights + progress existing (cuma kalau login murid)
   let bookmarks = [];
+  let highlights = [];
   let initialPage = 1;
   if (req.session.user && req.session.user.role === 'murid') {
     bookmarks = db
       .prepare('SELECT * FROM bookmark WHERE user_id=? AND buku_id=? ORDER BY halaman')
+      .all(req.session.user.id, buku.id);
+    highlights = db
+      .prepare('SELECT * FROM highlight WHERE user_id=? AND buku_id=? ORDER BY halaman, created_at')
       .all(req.session.user.id, buku.id);
     const prog = db
       .prepare('SELECT halaman_terakhir FROM progress_baca WHERE user_id=? AND buku_id=?')
@@ -155,6 +159,7 @@ router.get('/buku/:id/baca', (req, res) => {
     pdfUrl,
     pdfMode,
     bookmarks,
+    highlights,
     initialPage,
   });
 });
@@ -195,13 +200,13 @@ router.get('/tentang', (req, res) => {
   res.render('public/tentang', { title: 'Tentang Kami' });
 });
 
-// Multi-bahasa switcher (stub)
+// Multi-bahasa switcher
 router.get('/bahasa/:lang', (req, res) => {
   const lang = req.params.lang === 'en' ? 'en' : 'id';
+  req.session.lang = lang;
   if (req.session.user) {
     db.prepare('UPDATE users SET bahasa=? WHERE id=?').run(lang, req.session.user.id);
   }
-  req.session.lang = lang;
   res.redirect(req.get('Referer') || '/');
 });
 

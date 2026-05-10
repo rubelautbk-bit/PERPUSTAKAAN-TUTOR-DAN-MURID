@@ -228,6 +228,23 @@ router.delete('/bookmark/:id', (req, res) => {
   res.redirect('/buku/' + (bm ? bm.buku_id : '') + '/baca');
 });
 
+// HIGHLIGHT (via AJAX dari reader)
+router.post('/highlight/:bukuId', express.json(), (req, res) => {
+  const uid = req.session.user.id;
+  const { halaman, teks, warna, rects, catatan } = req.body;
+  if (!halaman || !teks) return res.status(400).json({ ok: false, error: 'Data tidak lengkap.' });
+  const info = db.prepare(
+    'INSERT INTO highlight (user_id,buku_id,halaman,teks,warna,rects_json,catatan) VALUES (?,?,?,?,?,?,?)'
+  ).run(uid, req.params.bukuId, halaman, teks, warna || 'yellow', JSON.stringify(rects || []), catatan || null);
+  res.json({ ok: true, id: info.lastInsertRowid });
+});
+
+router.delete('/highlight/:id', express.json(), (req, res) => {
+  const uid = req.session.user.id;
+  db.prepare('DELETE FROM highlight WHERE id=? AND user_id=?').run(req.params.id, uid);
+  res.json({ ok: true });
+});
+
 // TUGAS / QUIZ
 router.get('/tugas', (req, res) => {
   const uid = req.session.user.id;

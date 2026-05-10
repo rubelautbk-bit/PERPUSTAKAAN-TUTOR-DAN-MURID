@@ -1,3 +1,4 @@
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css"/>
 <style>
   .reader-container {
     display: grid;
@@ -22,13 +23,6 @@
     padding: 10px;
     min-height: 85vh;
   }
-  #pdfCanvas {
-    display: block;
-    margin: 0 auto;
-    max-width: 100%;
-    height: auto;
-    box-shadow: 0 0 15px rgba(0,0,0,0.08);
-  }
   .reader-toolbar {
     display: flex;
     gap: 8px;
@@ -42,36 +36,131 @@
   }
   .reader-toolbar button { padding: 6px 12px; font-size: 0.9rem; }
   #pageInfo { font-weight: 600; min-width: 100px; text-align: center; }
+
+  /* PDF Page container - relative positioning for text layer overlay */
+  .pdf-page-wrap {
+    position: relative;
+    margin: 0 auto;
+    box-shadow: 0 0 15px rgba(0,0,0,0.08);
+    background: white;
+    overflow: hidden;
+  }
+  #pdfCanvas {
+    display: block;
+  }
+  /* PDF.js text layer - transparent text on top of canvas for selection */
+  .textLayer {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    opacity: 0.25;
+    line-height: 1.0;
+    user-select: text;
+    -webkit-user-select: text;
+  }
+  .textLayer > span {
+    color: transparent;
+    position: absolute;
+    white-space: pre;
+    cursor: text;
+    transform-origin: 0% 0%;
+  }
+  .textLayer ::selection { background: rgba(0, 100, 255, 0.35); }
+
+  /* Highlight layer - drawn underneath text layer */
+  .highlightLayer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .highlight-rect {
+    position: absolute;
+    opacity: 0.4;
+    pointer-events: auto;
+    cursor: pointer;
+    border-radius: 2px;
+  }
+  .highlight-rect:hover { opacity: 0.65; }
+  .hl-yellow { background: #fff176; }
+  .hl-green { background: #a5d6a7; }
+  .hl-pink { background: #f48fb1; }
+  .hl-blue { background: #90caf9; }
+
+  /* Floating highlight toolbar */
+  .highlight-popup {
+    position: absolute;
+    background: #1e293b;
+    color: white;
+    border-radius: 8px;
+    padding: 6px;
+    display: none;
+    gap: 4px;
+    align-items: center;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    z-index: 1000;
+  }
+  .highlight-popup.visible { display: flex; }
+  .highlight-popup .color-btn {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    border: 2px solid white;
+    cursor: pointer;
+    padding: 0;
+  }
+  .highlight-popup .color-btn:hover { transform: scale(1.15); }
+
+  /* Highlight list sidebar item */
+  .hl-item {
+    padding: 8px;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  .hl-item:hover { background: var(--bg); }
+  .hl-item .hl-swatch {
+    display: inline-block;
+    width: 12px; height: 12px;
+    border-radius: 3px;
+    vertical-align: middle;
+    margin-right: 4px;
+  }
+  .hl-item .hl-delete {
+    float: right;
+    color: #dc2626;
+    cursor: pointer;
+    font-weight: bold;
+    padding: 0 4px;
+  }
 </style>
 
 <div class="page-header">
   <div>
-    <a href="/buku/<%= buku.id %>" class="text-muted">&larr; Kembali ke Detail</a>
+    <a href="/buku/<%= buku.id %>" class="text-muted">&larr; <%= t('reader.backToDetail') %></a>
     <h1 style="margin:4px 0;"><%= buku.judul %></h1>
-    <p class="subtitle">Baca online &middot; <%= buku.penulis %></p>
+    <p class="subtitle"><%= t('reader.readingOnline') %> &middot; <%= buku.penulis %></p>
   </div>
 </div>
 
 <div class="reader-container">
   <aside class="reader-sidebar">
-    <h4 style="margin-top:0">Bookmark</h4>
+    <h4 style="margin-top:0"><%= t('reader.bookmarks') %></h4>
     <form method="POST" action="/murid/bookmark/<%= buku.id %>">
       <input type="hidden" name="halaman" id="bmHalaman" />
       <div class="form-group">
-        <label>Catatan (opsional)</label>
-        <textarea name="catatan" class="form-control" rows="2" placeholder="Tulis catatan untuk halaman ini"></textarea>
+        <label><%= t('reader.notesOptional') %></label>
+        <textarea name="catatan" class="form-control" rows="2" placeholder="<%= t('reader.notesPlaceholder') %>"></textarea>
       </div>
-      <button class="btn btn-primary btn-block" onclick="document.getElementById('bmHalaman').value = currentPage;">+ Simpan Bookmark Hal. Ini</button>
+      <button class="btn btn-primary btn-block" onclick="document.getElementById('bmHalaman').value = currentPage;"><%= t('reader.saveBookmark') %></button>
     </form>
 
-    <h5 class="mt-3">Bookmark Saya</h5>
-    <% if (bookmarks.length === 0) { %>
-      <p class="text-muted" style="font-size:0.85rem;">Belum ada bookmark.</p>
+    <h5 class="mt-3"><%= t('reader.myBookmarks') %></h5>
+    <% if (typeof bookmarks === 'undefined' || bookmarks.length === 0) { %>
+      <p class="text-muted" style="font-size:0.85rem;"><%= t('reader.noBookmarks') %></p>
     <% } %>
-    <% bookmarks.forEach(bm => { %>
+    <% (bookmarks || []).forEach(bm => { %>
       <div style="padding:8px 0; border-bottom:1px solid var(--border);">
         <a href="#" onclick="goToPage(<%= bm.halaman %>); return false;" style="font-weight:600;">
-          Hal. <%= bm.halaman %>
+          <%= t('reader.pageShort') %> <%= bm.halaman %>
         </a>
         <% if (bm.catatan) { %>
           <p class="text-muted" style="margin:4px 0; font-size:0.82rem;"><%= bm.catatan %></p>
@@ -82,7 +171,25 @@
       </div>
     <% }) %>
 
-    <h5 class="mt-3">Progress</h5>
+    <h4 class="mt-3"><%= t('reader.highlights') %></h4>
+    <p class="text-muted" style="font-size:0.82rem;"><%= t('reader.selectTextHint') %></p>
+
+    <h5 class="mt-2"><%= t('reader.myHighlights') %></h5>
+    <div id="highlightList">
+      <% if (typeof highlights === 'undefined' || highlights.length === 0) { %>
+        <p class="text-muted" style="font-size:0.85rem;" id="noHighlightMsg"><%= t('reader.noHighlights') %></p>
+      <% } %>
+      <% (highlights || []).forEach(h => { %>
+        <div class="hl-item" data-page="<%= h.halaman %>" data-id="<%= h.id %>" onclick="goToPage(<%= h.halaman %>)">
+          <span class="hl-swatch hl-<%= h.warna %>"></span>
+          <span class="text-muted" style="font-size:0.78rem;"><%= t('reader.pageShort') %> <%= h.halaman %></span>
+          <span class="hl-delete" onclick="event.stopPropagation(); deleteHighlight(<%= h.id %>, this);">X</span>
+          <div style="margin-top:3px;">&quot;<%= h.teks.substring(0, 80) %><%= h.teks.length > 80 ? '...' : '' %>&quot;</div>
+        </div>
+      <% }) %>
+    </div>
+
+    <h5 class="mt-3"><%= t('reader.progress') %></h5>
     <div class="progress"><div class="bar" id="progressBar" style="width: 0%"></div></div>
     <p class="text-muted mt-1" style="font-size:0.85rem;" id="progressText">0%</p>
   </aside>
@@ -91,31 +198,57 @@
     <% if (pdfMode === 'iframe') { %>
       <iframe src="<%= pdfUrl %>" width="100%" height="900" style="border:0; border-radius:8px;" allow="autoplay"></iframe>
       <p class="text-muted text-center mt-2" style="font-size:0.85rem;">
-        File disajikan via Google Drive Preview. Bookmark tidak tersedia untuk mode ini.
+        <%= t('reader.driveNotice') %>
       </p>
     <% } else if (pdfMode === 'pdfjs') { %>
       <div class="reader-toolbar">
-        <button class="btn btn-secondary" onclick="prevPage()">&lsaquo; Prev</button>
-        <span id="pageInfo">Memuat...</span>
-        <button class="btn btn-secondary" onclick="nextPage()">Next &rsaquo;</button>
-        <button class="btn btn-secondary" onclick="zoomOut()">-</button>
-        <button class="btn btn-secondary" onclick="zoomIn()">+</button>
+        <button class="btn btn-secondary" onclick="prevPage()">&lsaquo; <%= t('common.prev') %></button>
+        <span id="pageInfo"><%= t('reader.loadingPdf') %></span>
+        <button class="btn btn-secondary" onclick="nextPage()"><%= t('common.next') %> &rsaquo;</button>
+        <button class="btn btn-secondary" onclick="zoomOut()" title="<%= t('reader.zoomOut') %>">-</button>
+        <button class="btn btn-secondary" onclick="zoomIn()" title="<%= t('reader.zoomIn') %>">+</button>
         <input type="number" id="pageGoto" min="1" value="1" style="width:70px; padding:4px;" />
-        <button class="btn btn-secondary" onclick="goToPage(parseInt(document.getElementById('pageGoto').value))">Go</button>
-        <a href="<%= pdfUrl %>" download class="btn btn-secondary">Download</a>
+        <button class="btn btn-secondary" onclick="goToPage(parseInt(document.getElementById('pageGoto').value))"><%= t('reader.go') %></button>
+        <a href="<%= pdfUrl %>" download class="btn btn-secondary"><%= t('reader.download') %></a>
       </div>
-      <canvas id="pdfCanvas"></canvas>
+
+      <div class="pdf-page-wrap" id="pdfPageWrap">
+        <canvas id="pdfCanvas"></canvas>
+        <div class="highlightLayer" id="highlightLayer"></div>
+        <div class="textLayer" id="textLayer"></div>
+      </div>
+
+      <!-- Floating highlight toolbar -->
+      <div id="highlightPopup" class="highlight-popup">
+        <span style="font-size:0.82rem; padding:0 4px;"><%= t('reader.highlightColor') %>:</span>
+        <button class="color-btn hl-yellow" title="<%= t('reader.colorYellow') %>" onclick="saveHighlight('yellow')"></button>
+        <button class="color-btn hl-green" title="<%= t('reader.colorGreen') %>" onclick="saveHighlight('green')"></button>
+        <button class="color-btn hl-pink" title="<%= t('reader.colorPink') %>" onclick="saveHighlight('pink')"></button>
+        <button class="color-btn hl-blue" title="<%= t('reader.colorBlue') %>" onclick="saveHighlight('blue')"></button>
+      </div>
 
       <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.js"></script>
       <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
         const bukuId = <%= buku.id %>;
         const pdfUrl = <%- JSON.stringify(pdfUrl) %>;
         const initialPage = <%= initialPage %>;
+        const isLoggedInMurid = <%= user && user.role === 'murid' ? 'true' : 'false' %>;
+
+        // highlights existing dari server: [{id, halaman, teks, warna, rects_json}, ...]
+        let allHighlights = <%- JSON.stringify(highlights || []) %>;
+
         let pdfDoc = null, currentPage = initialPage, scale = 1.3, totalPages = 0;
+        let currentViewport = null;
+
         const canvas = document.getElementById('pdfCanvas');
         const ctx = canvas.getContext('2d');
+        const textLayerDiv = document.getElementById('textLayer');
+        const highlightLayerDiv = document.getElementById('highlightLayer');
+        const pageWrap = document.getElementById('pdfPageWrap');
+        const popup = document.getElementById('highlightPopup');
 
         pdfjsLib.getDocument(pdfUrl).promise.then(doc => {
           pdfDoc = doc;
@@ -123,43 +256,218 @@
           if (currentPage > totalPages) currentPage = totalPages;
           renderPage(currentPage);
         }).catch(err => {
-          document.getElementById('pageInfo').innerText = 'Gagal memuat PDF';
+          document.getElementById('pageInfo').innerText = '<%= t('reader.pdfError') %>';
           console.error(err);
         });
 
-        function renderPage(num) {
-          pdfDoc.getPage(num).then(page => {
-            const viewport = page.getViewport({ scale });
-            canvas.width = viewport.width;
-            canvas.height = viewport.height;
-            page.render({ canvasContext: ctx, viewport });
-            document.getElementById('pageInfo').innerText = `Hal. ${num} / ${totalPages}`;
-            const pct = Math.round((num / totalPages) * 100);
-            document.getElementById('progressBar').style.width = pct + '%';
-            document.getElementById('progressText').innerText = pct + '%';
-            // Auto-save progress
+        async function renderPage(num) {
+          const page = await pdfDoc.getPage(num);
+          const viewport = page.getViewport({ scale });
+          currentViewport = viewport;
+
+          // Canvas
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          pageWrap.style.width = viewport.width + 'px';
+          pageWrap.style.height = viewport.height + 'px';
+          await page.render({ canvasContext: ctx, viewport }).promise;
+
+          // Text layer - pakai pdfjsViewer (pdf_viewer.min.js) TextLayerBuilder
+          textLayerDiv.innerHTML = '';
+          textLayerDiv.style.width = viewport.width + 'px';
+          textLayerDiv.style.height = viewport.height + 'px';
+          const textContent = await page.getTextContent();
+          await pdfjsLib.renderTextLayer({
+            textContentSource: textContent,
+            container: textLayerDiv,
+            viewport: viewport,
+            textDivs: [],
+          }).promise;
+
+          // Page info + progress
+          const info = `<%= t('reader.pageOfTotal', { current: '__CUR__', total: '__TOT__' }) %>`
+            .replace('__CUR__', num).replace('__TOT__', totalPages);
+          document.getElementById('pageInfo').innerText = info;
+          const pct = Math.round((num / totalPages) * 100);
+          document.getElementById('progressBar').style.width = pct + '%';
+          document.getElementById('progressText').innerText = pct + '%';
+
+          // Render highlights untuk halaman ini
+          renderHighlightsForPage(num);
+
+          // Auto-save progress
+          if (isLoggedInMurid) {
             fetch('/murid/progress/reader', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ buku_id: bukuId, halaman: num, total: totalPages }),
             }).catch(() => {});
+          }
+        }
+
+        function renderHighlightsForPage(pageNum) {
+          highlightLayerDiv.innerHTML = '';
+          const pageHighlights = allHighlights.filter(h => h.halaman === pageNum);
+          pageHighlights.forEach(h => {
+            let rects = [];
+            try { rects = JSON.parse(h.rects_json || '[]'); } catch(e) {}
+            rects.forEach(r => {
+              const el = document.createElement('div');
+              el.className = 'highlight-rect hl-' + h.warna;
+              // rects disimpan sebagai ratio (0-1) dari viewport, kalikan ke ukuran sekarang
+              el.style.left = (r.x * currentViewport.width) + 'px';
+              el.style.top = (r.y * currentViewport.height) + 'px';
+              el.style.width = (r.w * currentViewport.width) + 'px';
+              el.style.height = (r.h * currentViewport.height) + 'px';
+              el.title = h.teks;
+              highlightLayerDiv.appendChild(el);
+            });
           });
         }
+
         function prevPage() { if (currentPage > 1) { currentPage--; renderPage(currentPage); } }
         function nextPage() { if (currentPage < totalPages) { currentPage++; renderPage(currentPage); } }
         function goToPage(n) { if (n >= 1 && n <= totalPages) { currentPage = n; renderPage(n); } }
         function zoomIn() { scale = Math.min(3, scale + 0.2); renderPage(currentPage); }
         function zoomOut() { scale = Math.max(0.5, scale - 0.2); renderPage(currentPage); }
         document.addEventListener('keydown', (e) => {
+          if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
           if (e.key === 'ArrowLeft') prevPage();
           if (e.key === 'ArrowRight') nextPage();
         });
+
+        // ============ HIGHLIGHT LOGIC ============
+        // Saat user select text -> tampilkan popup
+        let lastSelection = null;
+
+        document.addEventListener('mouseup', (e) => {
+          setTimeout(() => {
+            const sel = window.getSelection();
+            const text = sel.toString().trim();
+            if (!text || !isLoggedInMurid) {
+              popup.classList.remove('visible');
+              lastSelection = null;
+              return;
+            }
+            // Pastikan selection di dalam textLayer (bukan sidebar)
+            if (!textLayerDiv.contains(sel.anchorNode) && !textLayerDiv.contains(sel.focusNode)) {
+              popup.classList.remove('visible');
+              return;
+            }
+            const range = sel.getRangeAt(0);
+            const rects = Array.from(range.getClientRects());
+            const wrapRect = pageWrap.getBoundingClientRect();
+
+            // Convert rects ke ratio relatif terhadap viewport
+            const relRects = rects.map(r => ({
+              x: (r.left - wrapRect.left) / currentViewport.width,
+              y: (r.top - wrapRect.top) / currentViewport.height,
+              w: r.width / currentViewport.width,
+              h: r.height / currentViewport.height,
+            }));
+
+            lastSelection = {
+              halaman: currentPage,
+              teks: text,
+              rects: relRects,
+            };
+
+            // Posisi popup dekat selection
+            const first = rects[0];
+            popup.style.left = (first.left - wrapRect.left + pageWrap.offsetLeft) + 'px';
+            popup.style.top = (first.top - wrapRect.top + pageWrap.offsetTop - 44) + 'px';
+            popup.classList.add('visible');
+          }, 10);
+        });
+
+        // Klik di luar selection -> hide popup
+        document.addEventListener('mousedown', (e) => {
+          if (!popup.contains(e.target)) {
+            // Delay supaya tidak conflict dengan mouseup
+            setTimeout(() => {
+              const sel = window.getSelection();
+              if (!sel.toString().trim()) {
+                popup.classList.remove('visible');
+              }
+            }, 20);
+          }
+        });
+
+        async function saveHighlight(warna) {
+          if (!lastSelection) return;
+          const payload = { ...lastSelection, warna };
+          try {
+            const res = await fetch('/murid/highlight/' + bukuId, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            });
+            const data = await res.json();
+            if (data.ok) {
+              // Tambah ke allHighlights di client & render ulang
+              const newHl = {
+                id: data.id,
+                halaman: payload.halaman,
+                teks: payload.teks,
+                warna: warna,
+                rects_json: JSON.stringify(payload.rects),
+              };
+              allHighlights.push(newHl);
+              renderHighlightsForPage(currentPage);
+              addHighlightToSidebar(newHl);
+              window.getSelection().removeAllRanges();
+              popup.classList.remove('visible');
+              lastSelection = null;
+            }
+          } catch (e) {
+            console.error('Save highlight error', e);
+          }
+        }
+
+        function addHighlightToSidebar(h) {
+          const noMsg = document.getElementById('noHighlightMsg');
+          if (noMsg) noMsg.remove();
+          const list = document.getElementById('highlightList');
+          const div = document.createElement('div');
+          div.className = 'hl-item';
+          div.dataset.id = h.id;
+          div.dataset.page = h.halaman;
+          div.onclick = () => goToPage(h.halaman);
+          div.innerHTML = `
+            <span class="hl-swatch hl-${h.warna}"></span>
+            <span class="text-muted" style="font-size:0.78rem;"><%= t('reader.pageShort') %> ${h.halaman}</span>
+            <span class="hl-delete" onclick="event.stopPropagation(); deleteHighlight(${h.id}, this);">X</span>
+            <div style="margin-top:3px;">&quot;${escapeHtml(h.teks.substring(0, 80))}${h.teks.length > 80 ? '...' : ''}&quot;</div>
+          `;
+          list.appendChild(div);
+        }
+
+        async function deleteHighlight(id, btnEl) {
+          if (!confirm('<%= t('common.confirmDelete') %>')) return;
+          try {
+            const res = await fetch('/murid/highlight/' + id + '?_method=DELETE', { method: 'POST' });
+            const data = await res.json();
+            if (data.ok) {
+              allHighlights = allHighlights.filter(h => h.id !== id);
+              btnEl.closest('.hl-item').remove();
+              renderHighlightsForPage(currentPage);
+            }
+          } catch (e) {
+            console.error('Delete highlight error', e);
+          }
+        }
+
+        function escapeHtml(str) {
+          const div = document.createElement('div');
+          div.textContent = str;
+          return div.innerHTML;
+        }
       </script>
     <% } else { %>
       <div class="text-center" style="padding:60px 20px;">
-        <h3>Buku ini belum memiliki file digital</h3>
-        <p class="text-muted">Silakan pinjam versi fisik melalui menu "Pinjam Buku".</p>
-        <a href="/buku/<%= buku.id %>" class="btn btn-primary">Kembali ke Detail</a>
+        <h3><%= t('reader.noFile') %></h3>
+        <p class="text-muted"><%= t('reader.noFileDesc') %></p>
+        <a href="/buku/<%= buku.id %>" class="btn btn-primary"><%= t('common.back') %></a>
       </div>
     <% } %>
   </main>

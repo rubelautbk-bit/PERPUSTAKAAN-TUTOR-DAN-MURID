@@ -13,6 +13,7 @@ const expressLayouts = require('express-ejs-layouts');
 const db = require('./src/db/database');
 require('./src/db/schema')(db);
 require('./src/db/seed')(db);
+const { createT, getSupportedLangs } = require('./src/utils/i18n');
 
 const app = express();
 
@@ -51,13 +52,31 @@ app.use(
 );
 app.use(flash());
 
-// Globals untuk semua view
+// Globals untuk semua view + i18n
 app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
   res.locals.success = req.flash('success');
   res.locals.error = req.flash('error');
   res.locals.currentPath = req.path;
-  res.locals.siteName = 'Perpustakaan Bimbel Rubela';
+
+  // Resolve bahasa: query ?lang=en > session > user DB > default 'id'
+  let lang = 'id';
+  if (req.query.lang && getSupportedLangs().includes(req.query.lang)) {
+    lang = req.query.lang;
+    req.session.lang = lang;
+  } else if (req.session.lang) {
+    lang = req.session.lang;
+  } else if (req.session.user) {
+    const u = db.prepare('SELECT bahasa FROM users WHERE id=?').get(req.session.user.id);
+    if (u && u.bahasa && getSupportedLangs().includes(u.bahasa)) {
+      lang = u.bahasa;
+      req.session.lang = lang;
+    }
+  }
+  const t = createT(lang);
+  res.locals.lang = lang;
+  res.locals.t = t;
+  res.locals.siteName = t('app.name');
   next();
 });
 

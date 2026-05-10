@@ -1,41 +1,41 @@
 <div class="page-header">
-  <div><h1>Dashboard Murid</h1><p class="subtitle">Halo, <%= user.name %>! Selamat membaca.</p></div>
-  <a href="/katalog" class="btn btn-primary">Cari Buku</a>
+  <div><h1><%= t('student.dashboardTitle') %></h1><p class="subtitle"><%= t('student.greeting', { name: user.name }) %></p></div>
+  <a href="/katalog" class="btn btn-primary"><%= t('student.searchBookBtn') %></a>
 </div>
 
 <div class="stat-grid">
-  <div class="stat"><div class="label">Sedang Dipinjam</div><div class="value"><%= s.pinjam %></div></div>
-  <div class="stat accent"><div class="label">Wishlist</div><div class="value"><%= s.wishlist %></div></div>
-  <div class="stat blue"><div class="label">Selesai Dibaca</div><div class="value"><%= s.selesai %></div></div>
-  <div class="stat"><div class="label">Level</div><div class="value">Lv <%= me ? me.level : 1 %></div></div>
-  <div class="stat red"><div class="label">Poin</div><div class="value"><%= me ? me.poin : 0 %></div></div>
+  <div class="stat"><div class="label"><%= t('student.statBorrowing') %></div><div class="value"><%= s.pinjam %></div></div>
+  <div class="stat accent"><div class="label"><%= t('student.statWishlist') %></div><div class="value"><%= s.wishlist %></div></div>
+  <div class="stat blue"><div class="label"><%= t('student.statFinished') %></div><div class="value"><%= s.selesai %></div></div>
+  <div class="stat"><div class="label"><%= t('student.statLevel') %></div><div class="value">Lv <%= me ? me.level : 1 %></div></div>
+  <div class="stat red"><div class="label"><%= t('student.statPoints') %></div><div class="value"><%= me ? me.poin : 0 %></div></div>
 </div>
 
 <div class="grid-2">
   <div class="card">
     <div class="page-header">
-      <h3 style="margin:0;">Buku Dipinjam</h3>
-      <a href="/murid/buku-saya" class="btn btn-sm btn-secondary">Lihat semua</a>
+      <h3 style="margin:0;"><%= t('student.borrowedBooks') %></h3>
+      <a href="/murid/buku-saya" class="btn btn-sm btn-secondary"><%= t('common.seeAll') %></a>
     </div>
     <% if (bukuAktif.length === 0) { %>
-      <p class="text-muted">Belum ada buku dipinjam. <a href="/katalog">Jelajahi katalog</a></p>
+      <p class="text-muted"><%= t('student.noBorrowedBooks') %> <a href="/katalog"><%= t('student.exploreCatalog') %></a></p>
     <% } %>
     <% bukuAktif.forEach(p => { %>
       <div style="padding:10px 0; border-bottom:1px solid var(--border);">
         <strong><%= p.judul %></strong>
-        <div class="text-muted" style="font-size:0.85rem;">Kembalikan sebelum: <%= p.tanggal_kembali %></div>
+        <div class="text-muted" style="font-size:0.85rem;"><%= t('student.returnBy', { date: p.tanggal_kembali }) %></div>
       </div>
     <% }) %>
   </div>
 
   <div class="card">
-    <h3>Progress Membaca</h3>
-    <% if (progress.length === 0) { %><p class="text-muted">Belum ada progress.</p><% } %>
+    <h3><%= t('student.readingProgress') %></h3>
+    <% if (progress.length === 0) { %><p class="text-muted"><%= t('student.noProgress') %></p><% } %>
     <% progress.forEach(p => { %>
       <div style="padding:8px 0;">
         <strong><%= p.judul %></strong>
         <div class="progress mt-1"><div class="bar" style="width: <%= p.persentase %>%"></div></div>
-        <small class="text-muted"><%= p.persentase %>% &middot; hal. <%= p.halaman_terakhir %></small>
+        <small class="text-muted"><%= p.persentase %>% &middot; <%= t('reader.pageShort') %> <%= p.halaman_terakhir %></small>
       </div>
     <% }) %>
   </div>
@@ -44,11 +44,11 @@
 <div class="card mt-3">
   <div class="page-header">
     <div>
-      <h3 style="margin:0;">&#129504; Rekomendasi Cerdas untukmu</h3>
-      <p class="subtitle">Berdasarkan riwayat baca &amp; wishlist kamu</p>
+      <h3 style="margin:0;">&#129504; <%= t('student.smartRecTitle') %></h3>
+      <p class="subtitle"><%= t('student.smartRecDesc') %></p>
     </div>
   </div>
-  <% if (rekomendasiSmart.length === 0) { %><p class="text-muted">Pinjam buku dulu untuk mendapat rekomendasi yang lebih personal.</p><% } %>
+  <% if (rekomendasiSmart.length === 0) { %><p class="text-muted"><%= t('student.noSmartRec') %></p><% } %>
   <div class="book-grid">
     <% rekomendasiSmart.forEach(b => { %>
       <a href="/buku/<%= b.id %>" class="book-card">
@@ -68,12 +68,12 @@
 
 <div class="grid-2 mt-3">
   <div class="card">
-    <h3>Rekomendasi Tutor</h3>
-    <% if (rekomendasi.length === 0) { %><p class="text-muted">Belum ada rekomendasi.</p><% } %>
+    <h3><%= t('student.tutorRec') %></h3>
+    <% if (rekomendasi.length === 0) { %><p class="text-muted"><%= t('student.noTutorRec') %></p><% } %>
     <% rekomendasi.forEach(r => { %>
       <div style="padding:10px 0; border-bottom:1px solid var(--border);">
         <a href="/buku/<%= r.buku_id %>" style="font-weight:600; color:var(--text);"><%= r.judul %></a>
-        <div class="text-muted" style="font-size:0.85rem;">Direkomendasikan oleh <%= r.tutor_name %></div>
+        <div class="text-muted" style="font-size:0.85rem;"><%= t('student.recommendedBy', { tutor: r.tutor_name }) %></div>
         <% if (r.catatan) { %><p style="margin:4px 0; font-size:0.9rem;">&quot;<%= r.catatan %>&quot;</p><% } %>
       </div>
     <% }) %>
@@ -81,15 +81,15 @@
 
   <div class="card">
     <div class="page-header">
-      <h3 style="margin:0;">Notifikasi</h3>
-      <a href="/murid/notifikasi" class="btn btn-sm btn-secondary">Semua</a>
+      <h3 style="margin:0;"><%= t('student.notifBlockTitle') %></h3>
+      <a href="/murid/notifikasi" class="btn btn-sm btn-secondary"><%= t('student.all') %></a>
     </div>
-    <% if (notif.length === 0) { %><p class="text-muted">Tidak ada notifikasi.</p><% } %>
+    <% if (notif.length === 0) { %><p class="text-muted"><%= t('student.noNotif') %></p><% } %>
     <% notif.forEach(n => { %>
       <div style="padding:8px 0; border-bottom:1px solid var(--border);">
         <strong><%= n.judul %></strong>
         <p style="margin:4px 0; font-size:0.9rem;"><%= n.pesan %></p>
-        <small class="text-muted"><%= new Date(n.created_at).toLocaleDateString('id-ID') %></small>
+        <small class="text-muted"><%= new Date(n.created_at).toLocaleDateString(lang === 'en' ? 'en-US' : 'id-ID') %></small>
       </div>
     <% }) %>
   </div>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="<%= lang %>">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -12,8 +12,15 @@
       <div class="brand-big">
         <div class="logo">RB</div>
         <h2 style="margin:0"><%= siteName %></h2>
-        <p class="text-muted" style="margin:4px 0 0">Bimbel Rubela Indonesia</p>
+        <p class="text-muted" style="margin:4px 0 0"><%= t('app.tagline') %></p>
       </div>
+
+      <div class="row-flex" style="justify-content:center; gap:4px; font-size:0.82rem; margin-bottom:12px;">
+        <a href="/bahasa/id" style="padding:2px 8px; <%= lang === 'id' ? 'font-weight:700; color:var(--brand);' : 'color:var(--muted);' %>">ID</a>
+        <span style="color:var(--muted);">/</span>
+        <a href="/bahasa/en" style="padding:2px 8px; <%= lang === 'en' ? 'font-weight:700; color:var(--brand);' : 'color:var(--muted);' %>">EN</a>
+      </div>
+
       <% if (success && success.length) { %>
         <div class="alert alert-success"><%= success %></div>
       <% } %>
