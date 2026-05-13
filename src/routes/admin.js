@@ -210,8 +210,14 @@ router.get('/kelas', (req, res) => {
 });
 router.post('/kelas', (req, res) => {
   const { nama, subtest, deskripsi, tutor_id, kode } = req.body;
-  try { db.prepare('INSERT INTO kelas (nama,subtest,deskripsi,tutor_id,kode) VALUES (?,?,?,?,?)').run(nama,subtest||null,deskripsi,tutor_id,kode.toUpperCase()); req.flash('success','Kelas dibuat.'); }
-  catch(e) { req.flash('error','Kode sudah ada.'); }
+  if (!nama || !nama.trim()) { req.flash('error','Nama kelas wajib.'); return res.redirect('/admin/kelas'); }
+  try { db.prepare('INSERT INTO kelas (nama,subtest,deskripsi,tutor_id,kode) VALUES (?,?,?,?,?)').run(nama.trim(),subtest||null,deskripsi,tutor_id,kode.toUpperCase()); req.flash('success','Kelas dibuat.'); }
+  catch(e) { req.flash('error','Kode sudah ada atau tutor invalid.'); }
+  res.redirect('/admin/kelas');
+});
+router.delete('/kelas/:id', (req, res) => {
+  db.prepare('DELETE FROM kelas WHERE id=?').run(req.params.id);
+  req.flash('success','Kelas dihapus.');
   res.redirect('/admin/kelas');
 });
 router.get('/kelas/:id', (req, res) => {

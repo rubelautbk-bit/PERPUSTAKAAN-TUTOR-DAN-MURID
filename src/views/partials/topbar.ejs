@@ -1,28 +1,32 @@
 <header class="topbar">
+  <% if (user && ['admin','tutor','murid'].includes(user.role)) { %>
+    <button id="sidebarToggle" class="sidebar-toggle" title="Toggle menu">&#9776;</button>
+  <% } %>
   <a href="/" class="brand">
     <span class="logo">RB</span>
-    <span><%= t('app.shortName') %></span>
+    <span><%= typeof t==='function' ? t('app.shortName') : 'Rubela Library' %></span>
   </a>
 
   <nav>
-    <a href="/" class="<%= currentPath === '/' ? 'active' : '' %>"><%= t('nav.home') %></a>
-    <a href="/katalog" class="<%= currentPath.startsWith('/katalog') ? 'active' : '' %>"><%= t('nav.catalog') %></a>
-    <a href="/pengumuman" class="<%= currentPath.startsWith('/pengumuman') ? 'active' : '' %>"><%= t('nav.announcements') %></a>
-    <a href="/tentang" class="<%= currentPath === '/tentang' ? 'active' : '' %>"><%= t('nav.about') %></a>
+    <a href="/" class="<%= currentPath === '/' ? 'active' : '' %>">Beranda</a>
+    <a href="/katalog" class="<%= currentPath.startsWith('/katalog') ? 'active' : '' %>">Katalog</a>
+    <a href="/pengumuman" class="<%= currentPath.startsWith('/pengumuman') ? 'active' : '' %>">Pengumuman</a>
+    <a href="/tentang" class="<%= currentPath === '/tentang' ? 'active' : '' %>">Tentang</a>
   </nav>
 
   <div class="actions">
+    <span class="live-clock" id="liveClock" data-tz="Asia/Jakarta" title="Waktu WIB"></span>
     <div class="lang-switch" style="display:flex; gap:4px; font-size:0.82rem;">
       <a href="/bahasa/id" class="<%= lang === 'id' ? 'active-lang' : '' %>" style="padding:4px 8px; <%= lang === 'id' ? 'font-weight:700; color:var(--brand);' : '' %>">ID</a>
       <a href="/bahasa/en" class="<%= lang === 'en' ? 'active-lang' : '' %>" style="padding:4px 8px; <%= lang === 'en' ? 'font-weight:700; color:var(--brand);' : '' %>">EN</a>
     </div>
-    <button id="themeToggle" class="theme-toggle" title="<%= t('nav.theme') %>"><%= t('nav.theme') %></button>
+    <button id="themeToggle" class="theme-toggle" title="Toggle tema">Tema</button>
     <% if (user) { %>
       <a href="/<%= user.role %>" class="btn btn-sm btn-secondary"><%= user.name.split(' ')[0] %></a>
-      <a href="/auth/logout" class="btn btn-sm btn-primary"><%= t('nav.logout') %></a>
+      <a href="/auth/logout" class="btn btn-sm btn-primary">Keluar</a>
     <% } else { %>
-      <a href="/auth/login" class="btn btn-sm btn-secondary"><%= t('nav.login') %></a>
-      <a href="/auth/register" class="btn btn-sm btn-primary"><%= t('nav.register') %></a>
+      <a href="/auth/login" class="btn btn-sm btn-secondary">Masuk</a>
+      <a href="/auth/register" class="btn btn-sm btn-primary">Daftar</a>
     <% } %>
   </div>
 </header>

@@ -1,1 +1,112 @@
-<div class="page-header"><div><a href="/murid/kelas">&larr; Kelas</a><h1><%=kelas.nama%></h1><p class="subtitle">Tutor: <%=kelas.tutor_name%> | Kode: <code><%=kelas.kode%></code></p></div></div><div class="grid-2"><div class="card"><h3>Materi & Modul</h3><%if(!materi.length){%><p class="text-muted">Belum ada materi.</p><%}%><%materi.forEach(m=>{%><div style="padding:8px 0;border-bottom:1px solid var(--border)"><span class="badge"><%=m.tipe%></span> <strong><%=m.judul%></strong><%if(m.buku_judul){%><div class="text-muted" style="font-size:0.85rem">Buku: <a href="/buku/<%=m.buku_id%>"><%=m.buku_judul%></a></div><%}%><%if(m.link){%><a href="<%=m.link%>" target="_blank" class="btn btn-sm btn-secondary">Link</a><%}%></div><%})%></div><div class="card"><h3>Rekomendasi Buku</h3><%rekomendasi.forEach(r=>{%><div style="padding:8px 0;border-bottom:1px solid var(--border)"><a href="/buku/<%=r.buku_id%>" style="font-weight:600;color:var(--text)"><%=r.judul%></a><div class="text-muted" style="font-size:0.85rem"><%=r.penulis%><%if(r.catatan){%> - <%=r.catatan%><%}%></div></div><%})%><%if(!rekomendasi.length){%><p class="text-muted">Belum ada rekomendasi.</p><%}%></div></div><%if(ujian.length){%><div class="card mt-3"><h3>Ujian/Kuis di Kelas Ini</h3><%ujian.forEach(u=>{%><div style="padding:8px 0;border-bottom:1px solid var(--border)"><a href="/murid/ujian/<%=u.id%>/kerjakan" class="btn btn-sm btn-primary">Kerjakan</a> <strong><%=u.judul%></strong> (<%=u.durasi_menit%> menit)</div><%})%></div><%}%>
+<div class="page-header">
+  <div>
+    <a href="/murid/kelas" class="text-muted">&larr; Kelas Saya</a>
+    <h1 style="margin:4px 0;"><%= kelas.nama %></h1>
+    <p class="subtitle">Tutor: <strong><%= kelas.tutor_name %></strong> | <%= kelas.subtest || 'Umum' %></p>
+  </div>
+</div>
+
+<% if (kelas.deskripsi) { %>
+  <div class="card"><%= kelas.deskripsi %></div>
+<% } %>
+
+<!-- TABS -->
+<div class="card" style="padding:6px; display:flex; gap:4px; flex-wrap:wrap;">
+  <button class="btn btn-sm tab-btn active" data-tab="materi">Modul &amp; Bahan Bacaan</button>
+  <button class="btn btn-sm tab-btn" data-tab="rekomendasi">Rekomendasi Buku</button>
+  <button class="btn btn-sm tab-btn" data-tab="tugas">Tugas &amp; Kuis</button>
+  <button class="btn btn-sm tab-btn" data-tab="pertemuan">Pertemuan</button>
+</div>
+
+<!-- TAB: MATERI -->
+<div class="tab-content" data-tab="materi">
+  <div class="card">
+    <h3>Modul &amp; Bahan Bacaan (<%= materi.length %>)</h3>
+    <% if (!materi.length) { %><p class="text-muted">Belum ada materi.</p><% } %>
+    <% materi.forEach(function(m) { %>
+      <div style="padding:12px 0; border-bottom:1px solid var(--border);">
+        <span class="badge"><%= m.tipe %></span>
+        <strong><%= m.judul %></strong>
+        <% if (m.deskripsi) { %><p style="margin:6px 0; font-size:0.9rem;"><%= m.deskripsi %></p><% } %>
+        <% if (m.buku_judul) { %>
+          <div class="text-muted" style="font-size:0.88rem;">
+            &#128218; Buku: <a href="/buku/<%= m.buku_id %>"><%= m.buku_judul %></a>
+          </div>
+        <% } %>
+        <div class="row-flex mt-1">
+          <% if (m.buku_id) { %><a href="/buku/<%= m.buku_id %>" class="btn btn-sm btn-primary">Baca Buku</a><% } %>
+          <% if (m.link) { %><a href="<%= m.link %>" target="_blank" class="btn btn-sm btn-secondary">Link</a><% } %>
+          <% if (m.file) { %><a href="/uploads/<%= m.file %>" target="_blank" class="btn btn-sm btn-secondary">File</a><% } %>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+</div>
+
+<!-- TAB: REKOMENDASI -->
+<div class="tab-content" data-tab="rekomendasi" style="display:none;">
+  <div class="card">
+    <h3>Rekomendasi Buku dari Tutor (<%= rekomendasi.length %>)</h3>
+    <% if (!rekomendasi.length) { %><p class="text-muted">Belum ada rekomendasi.</p><% } %>
+    <div class="grid-3">
+      <% rekomendasi.forEach(function(r) { %>
+        <a href="/buku/<%= r.buku_id %>" class="book-card" style="text-decoration:none;">
+          <div class="book-cover"><%= r.judul %></div>
+          <div class="book-info">
+            <div class="title"><%= r.judul %></div>
+            <div class="author"><%= r.penulis || '' %></div>
+            <% if (r.catatan) { %><p style="font-size:0.82rem; margin:4px 0;">"<%= r.catatan %>"</p><% } %>
+          </div>
+        </a>
+      <% }) %>
+    </div>
+  </div>
+</div>
+
+<!-- TAB: TUGAS -->
+<div class="tab-content" data-tab="tugas" style="display:none;">
+  <div class="card">
+    <h3>Tugas &amp; Kuis (<%= ujian.length %>)</h3>
+    <% if (!ujian.length) { %><p class="text-muted">Belum ada tugas/kuis.</p><% } %>
+    <% ujian.forEach(function(u) { %>
+      <div style="padding:10px 0; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <span class="badge"><%= u.tipe %></span>
+          <strong><%= u.judul %></strong>
+          <div class="text-muted" style="font-size:0.85rem;">Durasi: <%= u.durasi_menit %> menit</div>
+        </div>
+        <a href="/murid/ujian/<%= u.id %>/kerjakan" class="btn btn-sm btn-primary">Kerjakan</a>
+      </div>
+    <% }) %>
+  </div>
+</div>
+
+<!-- TAB: PERTEMUAN -->
+<div class="tab-content" data-tab="pertemuan" style="display:none;">
+  <div class="card">
+    <h3>Pertemuan (<%= (typeof pertemuan!=='undefined'&&pertemuan) ? pertemuan.length : 0 %>)</h3>
+    <% if (typeof pertemuan!=='undefined' && pertemuan) { %>
+      <% pertemuan.forEach(function(p) { %>
+        <div style="padding:10px 0; border-bottom:1px solid var(--border);">
+          <strong>Pertemuan <%= p.nomor %>: <%= p.judul %></strong>
+          <% if (p.tanggal) { %><div class="text-muted" style="font-size:0.85rem;"><%= p.tanggal %></div><% } %>
+          <% if (p.deskripsi) { %><p style="font-size:0.9rem; margin:4px 0;"><%= p.deskripsi %></p><% } %>
+        </div>
+      <% }) %>
+      <% if (pertemuan.length === 0) { %><p class="text-muted">Belum ada pertemuan.</p><% } %>
+    <% } %>
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.tab-btn').forEach(function(b) {
+  b.addEventListener('click', function() {
+    var tab = this.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(function(x){ x.classList.remove('active'); });
+    this.classList.add('active');
+    document.querySelectorAll('.tab-content').forEach(function(c) {
+      c.style.display = (c.dataset.tab === tab) ? '' : 'none';
+    });
+  });
+});
+</script>

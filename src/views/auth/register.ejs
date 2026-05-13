@@ -1,37 +1,41 @@
-<h3 class="text-center mt-0"><%= t('auth.registerTitle') %></h3>
-<p class="text-muted text-center" style="margin-bottom:20px;"><%= t('auth.registerSubtitle') %></p>
+<h3 class="text-center mt-0">Buat Akun Baru</h3>
+<p class="text-muted text-center" style="margin-bottom:20px;">Daftar sebagai Murid atau Tutor Bimbel Rubela.</p>
+
+<div class="alert alert-info" style="background:#fff3cd;color:#856404;border-left:4px solid #f4a623;padding:10px;margin-bottom:16px;font-size:0.88rem;">
+  &#9432; <strong>Informasi Penting:</strong> Setelah mendaftar, akun Anda akan <strong>diverifikasi dan dikonfirmasi terlebih dahulu oleh Admin/Tutor</strong> sebelum bisa digunakan. Anda akan menerima notifikasi via WhatsApp begitu akun diaktifkan.
+</div>
 
 <form method="POST" action="/auth/register">
   <div class="form-group">
-    <label><%= t('auth.fullName') %></label>
+    <label>Nama Lengkap *</label>
     <input type="text" name="name" class="form-control" required />
   </div>
   <div class="form-group">
-    <label><%= t('auth.email') %></label>
+    <label>Email *</label>
     <input type="email" name="email" class="form-control" required />
   </div>
   <div class="form-group">
-    <label><%= t('auth.phone') %></label>
-    <input type="text" name="phone" class="form-control" placeholder="<%= t('auth.phonePlaceholder') %>" />
+    <label>No. WhatsApp *</label>
+    <input type="text" name="phone" class="form-control" placeholder="08xxx (untuk notifikasi)" required />
   </div>
   <div class="form-group">
-    <label><%= t('auth.registerAs') %></label>
+    <label>Daftar sebagai</label>
     <select name="role" class="form-control">
-      <option value="murid"><%= t('auth.roleStudent') %></option>
-      <option value="tutor"><%= t('auth.roleTutor') %></option>
+      <option value="murid">Murid</option>
+      <option value="tutor">Tutor</option>
     </select>
   </div>
   <div class="form-group">
-    <label><%= t('auth.password') %></label>
+    <label>Password *</label>
     <input type="password" name="password" class="form-control" required minlength="6" />
   </div>
   <div class="form-group">
-    <label><%= t('auth.confirmPassword') %></label>
+    <label>Konfirmasi Password *</label>
     <input type="password" name="confirm" class="form-control" required />
   </div>
-  <button type="submit" class="btn btn-primary btn-block"><%= t('auth.registerBtn') %></button>
+  <button type="submit" class="btn btn-primary btn-block">Daftar Sekarang</button>
 </form>
 
 <p class="text-center mt-2" style="font-size:0.9rem;">
-  <%= t('auth.haveAccount') %> <a href="/auth/login"><%= t('nav.login') %></a>
+  Sudah punya akun? <a href="/auth/login">Masuk di sini</a>
 </p>

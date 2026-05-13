@@ -1,1 +1,114 @@
-<div class="page-header"><h1>Manajemen Kelas</h1></div><div class="card"><h3>Buat Kelas</h3><form method="POST" action="/admin/kelas"><div class="form-row"><div class="form-group"><label>Nama/Subtest</label><select name="nama" class="form-control"><option>Penalaran Umum (PU)</option><option>Pengetahuan dan Pemahaman Umum (PPU)</option><option>Kemampuan Memahami Bacaan dan Menulis (PBM)</option><option>Pengetahuan Kuantitatif (PK)</option><option>Literasi dalam Bahasa Indonesia</option><option>Literasi dalam Bahasa Inggris</option><option>Penalaran Matematika</option><option value="">-- Lainnya (ketik manual) --</option></select></div><div class="form-group"><label>Atau ketik nama manual</label><input name="subtest" class="form-control" placeholder="Kode subtest"/></div><div class="form-group"><label>Kode Unik</label><input name="kode" class="form-control" required/></div><div class="form-group"><label>Tutor</label><select name="tutor_id" class="form-control"><% tutors.forEach(t=>{ %><option value="<%= t.id %>"><%= t.name %></option><% }) %></select></div></div><div class="form-group"><label>Deskripsi</label><textarea name="deskripsi" class="form-control"></textarea></div><button class="btn btn-primary">Buat Kelas</button></form></div><table class="tbl"><thead><tr><th>Nama</th><th>Kode</th><th>Tutor</th><th>Murid</th><th>Aksi</th></tr></thead><tbody><% kelas.forEach(k=>{ %><tr><td><a href="/admin/kelas/<%= k.id %>"><strong><%= k.nama %></strong></a></td><td><code><%= k.kode %></code></td><td><%= k.tutor_name %></td><td><%= k.jumlah %></td><td><a href="/admin/kelas/<%= k.id %>" class="btn btn-sm btn-secondary">Detail</a></td></tr><% }) %></tbody></table>
+<div class="page-header"><h1>Manajemen Kelas</h1></div>
+
+<div class="card">
+  <h3>Buat Kelas Baru</h3>
+  <form method="POST" action="/admin/kelas" id="formKelas">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Pilih Nama Kelas</label>
+        <select class="form-control" id="namaSelect" onchange="onNamaChange()">
+          <option value="Penalaran Umum (PU)|PU">Penalaran Umum (PU)</option>
+          <option value="Pengetahuan dan Pemahaman Umum (PPU)|PPU">Pengetahuan dan Pemahaman Umum (PPU)</option>
+          <option value="Kemampuan Memahami Bacaan dan Menulis (PBM)|PBM">Kemampuan Memahami Bacaan dan Menulis (PBM)</option>
+          <option value="Pengetahuan Kuantitatif (PK)|PK">Pengetahuan Kuantitatif (PK)</option>
+          <option value="Literasi dalam Bahasa Indonesia|LBI">Literasi dalam Bahasa Indonesia</option>
+          <option value="Literasi dalam Bahasa Inggris|LBE">Literasi dalam Bahasa Inggris</option>
+          <option value="Penalaran Matematika|PM">Penalaran Matematika</option>
+          <option value="__CUSTOM__">-- Lainnya (ketik manual) --</option>
+        </select>
+      </div>
+      <div class="form-group" id="namaManualGroup" style="display:none;">
+        <label>Ketik Nama Kelas Manual *</label>
+        <input type="text" id="namaManual" class="form-control" placeholder="Contoh: Persiapan UTBK 2025"/>
+      </div>
+      <div class="form-group">
+        <label>Kode Subtest</label>
+        <input type="text" name="subtest" id="subtestInput" class="form-control" placeholder="PU, PPU, dll"/>
+      </div>
+      <div class="form-group">
+        <label>Kode Unik Kelas *</label>
+        <input type="text" name="kode" class="form-control" placeholder="PU01, PPU02" required/>
+      </div>
+      <div class="form-group">
+        <label>Tutor</label>
+        <select name="tutor_id" class="form-control" required>
+          <% tutors.forEach(function(t) { %>
+            <option value="<%= t.id %>"><%= t.name %></option>
+          <% }) %>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Deskripsi</label>
+      <textarea name="deskripsi" class="form-control" rows="2"></textarea>
+    </div>
+
+    <!-- Hidden actual fields -->
+    <input type="hidden" name="nama" id="namaField" value="Penalaran Umum (PU)"/>
+
+    <button type="submit" class="btn btn-primary">Buat Kelas</button>
+  </form>
+</div>
+
+<div class="card mt-3">
+  <h3>Daftar Kelas (<%= kelas.length %>)</h3>
+  <table class="tbl">
+    <thead><tr><th>Nama</th><th>Kode</th><th>Subtest</th><th>Tutor</th><th>Murid</th><th>Aksi</th></tr></thead>
+    <tbody>
+      <% kelas.forEach(function(k) { %>
+        <tr>
+          <td><a href="/admin/kelas/<%= k.id %>"><strong><%= k.nama %></strong></a></td>
+          <td><code><%= k.kode %></code></td>
+          <td><%= k.subtest || '-' %></td>
+          <td><%= k.tutor_name %></td>
+          <td><%= k.jumlah %></td>
+          <td class="row-flex">
+            <a href="/admin/kelas/<%= k.id %>" class="btn btn-sm btn-secondary">Detail</a>
+            <form method="POST" action="/admin/kelas/<%= k.id %>?_method=DELETE" onsubmit="return confirm('Hapus kelas ini?')">
+              <button class="btn btn-sm btn-danger">Hapus</button>
+            </form>
+          </td>
+        </tr>
+      <% }) %>
+      <% if (kelas.length === 0) { %>
+        <tr><td colspan="6" class="text-muted text-center">Belum ada kelas.</td></tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>
+
+<script>
+function onNamaChange() {
+  var sel = document.getElementById('namaSelect');
+  var group = document.getElementById('namaManualGroup');
+  var manual = document.getElementById('namaManual');
+  var hiddenField = document.getElementById('namaField');
+  var subtestInput = document.getElementById('subtestInput');
+
+  if (sel.value === '__CUSTOM__') {
+    group.style.display = '';
+    manual.required = true;
+    hiddenField.value = '';
+    subtestInput.value = '';
+  } else {
+    group.style.display = 'none';
+    manual.required = false;
+    var parts = sel.value.split('|');
+    hiddenField.value = parts[0];
+    if (parts[1]) subtestInput.value = parts[1];
+  }
+}
+document.getElementById('namaManual').addEventListener('input', function() {
+  document.getElementById('namaField').value = this.value;
+});
+// Initialize
+onNamaChange();
+
+document.getElementById('formKelas').addEventListener('submit', function(e) {
+  var hiddenField = document.getElementById('namaField');
+  if (!hiddenField.value || !hiddenField.value.trim()) {
+    e.preventDefault();
+    alert('Nama kelas tidak boleh kosong.');
+  }
+});
+</script>

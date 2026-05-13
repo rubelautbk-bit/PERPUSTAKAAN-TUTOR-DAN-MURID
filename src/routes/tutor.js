@@ -62,7 +62,40 @@ router.get('/kelas/:id', (req, res) => {
   const pertemuan = db.prepare('SELECT * FROM pertemuan WHERE kelas_id=? ORDER BY nomor').all(kelas.id);
   const materi = db.prepare('SELECT m.*,b.judul AS buku_judul FROM materi m LEFT JOIN buku b ON b.id=m.buku_id WHERE m.kelas_id=? ORDER BY m.created_at DESC').all(kelas.id);
   const bukuList = db.prepare('SELECT id,judul,penulis FROM buku ORDER BY judul').all();
-  res.render('tutor/kelas-detail', { title: kelas.nama, kelas, members, allMurid, pertemuan, materi, bukuList });
+  const rekomendasi = db.prepare('SELECT r.*, b.judul, b.penulis FROM rekomendasi r JOIN buku b ON b.id=r.buku_id WHERE r.kelas_id=? ORDER BY r.created_at DESC').all(kelas.id);
+  const tugasList = db.prepare('SELECT * FROM ujian WHERE kelas_id=? ORDER BY created_at DESC').all(kelas.id);
+  const kelasLain = db.prepare("SELECT k.*, u.name AS tutor_name FROM kelas k JOIN users u ON u.id=k.tutor_id WHERE k.id!=? AND k.status='active' ORDER BY k.nama").all(kelas.id);
+  res.render('tutor/kelas-detail', { title: kelas.nama, kelas, members, allMurid, semuaMurid: allMurid, pertemuan, materi, bukuList, rekomendasi, tugasList, kelasLain });
+});
+
+// Delete rekomendasi dari kelas
+router.delete('/kelas/:id/rekomendasi/:rid', (req, res) => {
+  db.prepare('DELETE FROM rekomendasi WHERE id=? AND kelas_id=?').run(req.params.rid, req.params.id);
+  req.flash('success', 'Rekomendasi dihapus.');
+  res.redirect('/tutor/kelas/' + req.params.id);
+});
+
+// Kirim materi & rekomendasi ke kelas lain
+router.post('/kelas/:id/kirim-materi', (req, res) => {
+  const sourceId = req.params.id;
+  const targets = Array.isArray(req.body.target_ids) ? req.body.target_ids : [req.body.target_ids].filter(Boolean);
+  const includeMat = !!req.body.include_materi;
+  const includeRek = !!req.body.include_rekomendasi;
+  if (targets.length === 0) { req.flash('error','Pilih kelas tujuan.'); return res.redirect('/tutor/kelas/'+sourceId); }
+
+  let totalMat=0, totalRek=0;
+  if (includeMat) {
+    const source = db.prepare('SELECT * FROM materi WHERE kelas_id=?').all(sourceId);
+    const ins = db.prepare('INSERT INTO materi (kelas_id,tutor_id,judul,deskripsi,tipe,file,link,buku_id) VALUES (?,?,?,?,?,?,?,?)');
+    targets.forEach(t => { source.forEach(m => { ins.run(t, req.session.user.id, m.judul, m.deskripsi, m.tipe, m.file, m.link, m.buku_id); totalMat++; }); });
+  }
+  if (includeRek) {
+    const source = db.prepare('SELECT * FROM rekomendasi WHERE kelas_id=?').all(sourceId);
+    const ins = db.prepare('INSERT INTO rekomendasi (tutor_id,buku_id,kelas_id,pertemuan_id,catatan) VALUES (?,?,?,?,?)');
+    targets.forEach(t => { source.forEach(r => { ins.run(req.session.user.id, r.buku_id, t, null, r.catatan); totalRek++; }); });
+  }
+  req.flash('success', `Dikirim ke ${targets.length} kelas: ${totalMat} materi, ${totalRek} rekomendasi.`);
+  res.redirect('/tutor/kelas/' + sourceId);
 });
 router.post('/kelas/:id/members', (req, res) => {
   const userIds = Array.isArray(req.body.user_ids) ? req.body.user_ids : [req.body.user_ids].filter(Boolean);

@@ -1,1 +1,28 @@
-<div class="page-header"><h1>Jelajahi Kelas</h1></div><div class="card"><h3>Gabung dengan Kode</h3><form method="POST" action="/murid/kelas/join" class="row-flex"><input name="kode" class="form-control" style="max-width:200px" placeholder="Kode kelas" required/><button class="btn btn-primary">Gabung</button></form></div><div class="grid-3 mt-3"><%semua.forEach(k=>{%><div class="card"><span class="badge"><%=k.subtest||"Umum"%></span><h3 style="margin:8px 0"><%=k.nama%></h3><p class="text-muted">Tutor: <%=k.tutor_name%> | <%=k.jumlah%> murid</p><p class="text-muted" style="font-size:0.85rem">Kode: <code><%=k.kode%></code></p></div><%})%></div>
+<div class="page-header"><h1>Jelajahi &amp; Gabung Kelas</h1></div>
+
+<div class="card">
+  <h3>Gabung dengan Kode Kelas</h3>
+  <p class="text-muted" style="font-size:0.9rem;">Masukkan kode unik yang diberikan oleh tutor atau admin.</p>
+  <form method="POST" action="/murid/kelas/join" class="row-flex">
+    <input name="kode" class="form-control" style="max-width:250px;" placeholder="Contoh: PU01" required />
+    <button class="btn btn-primary">Gabung</button>
+  </form>
+</div>
+
+<h3 class="mt-3">Kelas yang Tersedia</h3>
+<% if (!semua.length) { %>
+  <div class="card"><p class="text-muted text-center">Belum ada kelas aktif.</p></div>
+<% } else { %>
+  <div class="grid-3">
+    <% semua.forEach(function(k) { %>
+      <div class="card">
+        <span class="badge"><%= k.subtest || 'Umum' %></span>
+        <h3 style="margin:8px 0;"><%= k.nama %></h3>
+        <p class="text-muted">Tutor: <%= k.tutor_name %></p>
+        <p class="text-muted" style="font-size:0.85rem;"><%= k.jumlah %> murid</p>
+        <% if (k.deskripsi) { %><p style="font-size:0.85rem;"><%= k.deskripsi %></p><% } %>
+        <p class="text-muted" style="font-size:0.82rem;">Hubungi tutor Anda untuk mendapatkan kode.</p>
+      </div>
+    <% }) %>
+  </div>
+<% } %>

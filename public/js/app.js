@@ -13,7 +13,63 @@
   });
 })();
 
+// Sidebar toggle - persistent, tidak menutup/membuka tanpa alasan
+(function () {
+  const savedCollapsed = localStorage.getItem('sidebarCollapsed') === '1';
+  if (savedCollapsed) document.documentElement.classList.add('sidebar-collapsed');
+
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('#sidebarToggle')) {
+      const html = document.documentElement;
+      html.classList.toggle('sidebar-collapsed');
+      localStorage.setItem('sidebarCollapsed', html.classList.contains('sidebar-collapsed') ? '1' : '0');
+    }
+  });
+})();
+
+// Sidebar scroll position persist (biar tidak balik ke atas setelah refresh)
+(function() {
+  const sb = document.querySelector('.sidebar');
+  if (!sb) return;
+  const key = 'sidebarScroll';
+  const saved = parseInt(sessionStorage.getItem(key) || '0', 10);
+  if (saved > 0) sb.scrollTop = saved;
+  sb.addEventListener('scroll', function() {
+    sessionStorage.setItem(key, sb.scrollTop);
+  });
+})();
+
+// Auto-scroll sidebar ke menu yang sedang aktif (agar terlihat tanpa harus scroll manual)
+(function() {
+  const active = document.querySelector('.sidebar a.active');
+  if (active) {
+    const sb = document.querySelector('.sidebar');
+    // Kalau tidak ada scroll position tersimpan, auto-scroll ke active item
+    if (!sessionStorage.getItem('sidebarScroll')) {
+      const offset = active.offsetTop - 60;
+      if (sb && offset > 100) sb.scrollTop = offset;
+    }
+  }
+})();
+
 // Auto hide alert
 setTimeout(() => {
   document.querySelectorAll('.alert').forEach((a) => (a.style.display = 'none'));
 }, 5000);
+
+// Live clock untuk WIB/WITA/WIT (jika ada elemen #liveClock)
+(function() {
+  const el = document.getElementById('liveClock');
+  if (!el) return;
+  const tz = el.dataset.tz || 'Asia/Jakarta';
+  function tick() {
+    const now = new Date();
+    const formatted = now.toLocaleString('id-ID', {
+      timeZone: tz, weekday: 'long', year: 'numeric', month: 'long',
+      day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
+    el.textContent = formatted;
+  }
+  tick();
+  setInterval(tick, 1000);
+})();

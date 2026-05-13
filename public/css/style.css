@@ -437,3 +437,79 @@ table.tbl tr:hover td { background: var(--bg); }
 .bar-row { display: grid; grid-template-columns: 160px 1fr 60px; gap: 10px; align-items: center; }
 .bar-row .bar-track { background: var(--border); height: 18px; border-radius: 4px; overflow: hidden; }
 .bar-row .bar-fill { background: var(--brand); height: 100%; }
+
+
+/* ===== SIDEBAR COLLAPSED STATE ===== */
+html.sidebar-collapsed .sidebar {
+  display: none;
+}
+html.sidebar-collapsed .main {
+  padding-left: 24px;
+}
+
+/* Sidebar toggle button */
+.sidebar-toggle {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1.2rem;
+  line-height: 1;
+  margin-right: 8px;
+}
+.sidebar-toggle:hover { background: var(--brand-light); }
+
+/* Tabs */
+.tab-btn {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+.tab-btn.active {
+  background: var(--brand);
+  color: white;
+  border-color: var(--brand);
+}
+
+/* Live clock */
+.live-clock {
+  font-size: 0.82rem;
+  color: var(--muted);
+  background: var(--bg);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-family: monospace;
+}
+
+/* Kartu anggota preview */
+.id-card-preview {
+  background: linear-gradient(135deg, #1e7a5a, #145c43);
+  color: white;
+  border-radius: 12px;
+  padding: 20px;
+  max-width: 340px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+.id-card-preview .id-card-qr {
+  background: white;
+  padding: 6px;
+  border-radius: 6px;
+}
+
+/* Chat bubble */
+.chat-msg {
+  margin: 6px 0;
+  padding: 8px 12px;
+  border-radius: 12px;
+  max-width: 70%;
+  word-wrap: break-word;
+}
+.chat-msg.me { background: var(--brand); color: white; margin-left: auto; }
+.chat-msg.other { background: var(--bg); color: var(--text); }
