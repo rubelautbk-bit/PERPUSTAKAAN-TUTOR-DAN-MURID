@@ -256,4 +256,28 @@ router.get('/rekap', (req, res) => {
   res.render('murid/rekap', { title: 'Rekap', totalPinjam, totalSelesai, totalUjian, avgNilai: Math.round(avgNilai) });
 });
 
+// ==================== CHAT INDIVIDUAL ====================
+router.post('/chat/start/:userId', (req, res) => {
+  const uid = req.session.user.id;
+  const lawanId = parseInt(req.params.userId);
+  if (lawanId === uid) return res.redirect('/murid/chat');
+  // Cek room existing (private)
+  const existing = db.prepare(`
+    SELECT cr.id FROM chat_room cr
+    JOIN chat_member cm1 ON cm1.room_id=cr.id AND cm1.user_id=?
+    JOIN chat_member cm2 ON cm2.room_id=cr.id AND cm2.user_id=?
+    WHERE cr.tipe='private' LIMIT 1
+  `).get(uid, lawanId);
+  let roomId;
+  if (existing) {
+    roomId = existing.id;
+  } else {
+    const info = db.prepare("INSERT INTO chat_room (tipe) VALUES ('private')").run();
+    roomId = info.lastInsertRowid;
+    db.prepare('INSERT INTO chat_member (room_id,user_id) VALUES (?,?)').run(roomId, uid);
+    db.prepare('INSERT INTO chat_member (room_id,user_id) VALUES (?,?)').run(roomId, lawanId);
+  }
+  res.redirect('/murid/chat/' + roomId);
+});
+
 module.exports = router;
