@@ -1,0 +1,30 @@
+<div class="page-header"><h1>Usulan Buku / Bahan Bacaan</h1></div>
+
+<div class="grid-2">
+  <div class="card">
+    <h3>Ajukan Usulan Baru</h3>
+    <form method="POST" action="/murid/usulan" enctype="multipart/form-data">
+      <div class="form-group"><label>Nama Buku/Bahan Bacaan *</label><input name="judul" class="form-control" required/></div>
+      <div class="form-group"><label>Pencipta/Penulis</label><input name="pencipta" class="form-control"/></div>
+      <div class="form-group"><label>Tahun Terbit</label><input type="number" name="tahun_terbit" class="form-control"/></div>
+      <div class="form-group"><label>Link Dokumen (URL eksternal)</label><input type="url" name="link" class="form-control" placeholder="https://..."/></div>
+      <div class="form-group"><label>Atau Upload File (PDF/PPT)</label><input type="file" name="file" accept=".pdf,.ppt,.pptx" class="form-control"/></div>
+      <div class="form-group"><label>Alasan/Catatan</label><textarea name="alasan" class="form-control" rows="3" placeholder="Mengapa buku ini perlu ditambahkan?"></textarea></div>
+      <button class="btn btn-primary">Ajukan Usulan</button>
+    </form>
+  </div>
+  <div class="card">
+    <h3>Usulan Saya</h3>
+    <% if (list.length === 0) { %><p class="text-muted">Belum ada usulan.</p><% } %>
+    <% list.forEach(u => { %>
+      <div style="padding:10px 0; border-bottom:1px solid var(--border);">
+        <strong><%= u.judul %></strong>
+        <div class="text-muted" style="font-size:0.85rem;"><%= u.pencipta || '-' %> &middot; <%= u.tahun_terbit || '-' %></div>
+        <span class="badge <%= u.status==='disetujui' ? '' : u.status==='ditolak' ? 'red' : 'warn' %>"><%= u.status %></span>
+        <% if (u.link) { %><a href="<%= u.link %>" target="_blank" class="btn btn-sm btn-secondary mt-1">Link</a><% } %>
+        <% if (u.file) { %><a href="/uploads/<%= u.file %>" target="_blank" class="btn btn-sm btn-secondary mt-1">File</a><% } %>
+        <% if (u.catatan_admin) { %><p class="text-muted mt-1" style="font-size:0.82rem;">Admin: <%= u.catatan_admin %></p><% } %>
+      </div>
+    <% }) %>
+  </div>
+</div>

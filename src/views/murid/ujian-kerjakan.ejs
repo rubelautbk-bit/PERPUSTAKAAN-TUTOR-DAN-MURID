@@ -1,0 +1,154 @@
+<div class="cbt-header">
+  <div><strong><%= uj.judul %></strong> <span class="badge" style="background:#fff3;color:#fff;margin-left:8px;"><%= uj.tipe %></span></div>
+  <div class="cbt-timer" id="timer">--:--:--</div>
+  <button class="btn btn-warning" onclick="submitUjian()">Selesai & Kumpulkan</button>
+</div>
+
+<div class="cbt-container">
+  <div class="cbt-main" id="soalContainer">
+    <% soalList.forEach((s, i) => { %>
+      <div class="soal-item card" id="soal-<%= i %>" style="<%= i > 0 ? 'display:none;' : '' %>">
+        <div class="row-flex" style="justify-content:space-between;margin-bottom:10px;">
+          <span class="badge"><%= s.subtest %> | <%= s.tipe %></span>
+          <span class="text-muted">Soal <%= i+1 %>/<%= soalList.length %> | Poin: <%= s.poin %></span>
+        </div>
+        <div class="soal-text" style="font-size:1.05rem;line-height:1.7;margin-bottom:16px;"><%- s.soal %></div>
+
+        <% if (s.tipe === 'pg') { %>
+          <% const opsi = JSON.parse(s.opsi_json || '[]'); %>
+          <% opsi.forEach((o, oi) => { %>
+            <label style="display:flex;gap:10px;padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;cursor:pointer;" class="opsi-label">
+              <input type="radio" name="ans_<%= s.id %>" value="<%= String.fromCharCode(65+oi) %>" onchange="markAnswered(<%= i %>)"/>
+              <span><strong><%= String.fromCharCode(65+oi) %>.</strong> <%- o %></span>
+            </label>
+          <% }) %>
+        <% } else if (s.tipe === 'benar_salah') { %>
+          <label style="display:flex;gap:10px;padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;cursor:pointer;">
+            <input type="radio" name="ans_<%= s.id %>" value="true" onchange="markAnswered(<%= i %>)"/> <span>Benar</span>
+          </label>
+          <label style="display:flex;gap:10px;padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;cursor:pointer;">
+            <input type="radio" name="ans_<%= s.id %>" value="false" onchange="markAnswered(<%= i %>)"/> <span>Salah</span>
+          </label>
+        <% } else if (s.tipe === 'isian' || s.tipe === 'esai') { %>
+          <textarea name="ans_<%= s.id %>" class="form-control" rows="<%= s.tipe==='esai'?6:2 %>" placeholder="Ketik jawaban..." oninput="markAnswered(<%= i %>)"></textarea>
+        <% } else if (s.tipe === 'pg_kompleks') { %>
+          <% const opsi = JSON.parse(s.opsi_json || '[]'); %>
+          <p class="text-muted" style="font-size:0.85rem;">Pilih lebih dari satu jawaban yang benar:</p>
+          <% opsi.forEach((o, oi) => { %>
+            <label style="display:flex;gap:10px;padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;cursor:pointer;">
+              <input type="checkbox" name="ans_<%= s.id %>" value="<%= String.fromCharCode(65+oi) %>" onchange="markAnswered(<%= i %>)"/>
+              <span><strong><%= String.fromCharCode(65+oi) %>.</strong> <%- o %></span>
+            </label>
+          <% }) %>
+        <% } else { %>
+          <textarea name="ans_<%= s.id %>" class="form-control" rows="3" placeholder="Jawaban..." oninput="markAnswered(<%= i %>)"></textarea>
+        <% } %>
+
+        <div class="row-flex mt-3" style="justify-content:space-between;">
+          <button class="btn btn-secondary" onclick="navigasi(<%= i-1 %>)" <%= i===0?'disabled':'' %>>&laquo; Sebelumnya</button>
+          <button class="btn btn-primary" onclick="navigasi(<%= i+1 %>)" <%= i===soalList.length-1?'disabled':'' %>>Berikutnya &raquo;</button>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+
+  <aside class="cbt-sidebar">
+    <h4>Navigasi Soal</h4>
+    <div class="soal-nav" id="soalNav">
+      <% soalList.forEach((s, i) => { %>
+        <a href="#" onclick="navigasi(<%= i %>);return false;" id="nav-<%= i %>" class="<%= i===0?'current':'' %>"><%= i+1 %></a>
+      <% }) %>
+    </div>
+    <div class="mt-3">
+      <div class="row-flex" style="gap:8px;font-size:0.82rem;">
+        <span style="width:14px;height:14px;background:var(--brand);border-radius:4px;display:inline-block;"></span> Dijawab
+        <span style="width:14px;height:14px;background:var(--bg);border:1px solid var(--border);border-radius:4px;display:inline-block;"></span> Belum
+      </div>
+    </div>
+    <div class="card mt-3" style="background:var(--bg);">
+      <strong>Info Ujian</strong><br/>
+      <small>Durasi: <%= uj.durasi_menit %> menit</small><br/>
+      <small>Jumlah: <%= soalList.length %> soal</small><br/>
+      <% if (uj.poin_negatif > 0) { %><small style="color:#dc2626;">Poin negatif: -<%= uj.poin_negatif %></small><% } %>
+    </div>
+  </aside>
+</div>
+
+<script>
+const ujianId = <%= uj.id %>;
+const totalSoal = <%= soalList.length %>;
+const durasiDetik = <%= uj.durasi_menit %> * 60;
+const antiCheat = <%= uj.anti_cheat ? 'true' : 'false' %>;
+const soalIds = <%- JSON.stringify(soalList.map(s => s.id)) %>;
+let currentSoal = 0;
+let sisaWaktu = durasiDetik;
+let violations = 0;
+
+// Timer
+const timerEl = document.getElementById('timer');
+const interval = setInterval(() => {
+  sisaWaktu--;
+  if (sisaWaktu <= 0) { clearInterval(interval); submitUjian(); return; }
+  const h = Math.floor(sisaWaktu/3600); const m = Math.floor((sisaWaktu%3600)/60); const s = sisaWaktu%60;
+  timerEl.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  if (sisaWaktu < 60) timerEl.style.color = '#dc2626';
+}, 1000);
+
+function navigasi(idx) {
+  if (idx < 0 || idx >= totalSoal) return;
+  document.getElementById('soal-'+currentSoal).style.display = 'none';
+  document.getElementById('soal-'+idx).style.display = '';
+  document.getElementById('nav-'+currentSoal).classList.remove('current');
+  document.getElementById('nav-'+idx).classList.add('current');
+  currentSoal = idx;
+}
+
+function markAnswered(idx) {
+  document.getElementById('nav-'+idx).classList.add('answered');
+}
+
+function collectAnswers() {
+  const jawaban = {};
+  soalIds.forEach(id => {
+    const radios = document.querySelectorAll(`input[name="ans_${id}"]:checked`);
+    const textarea = document.querySelector(`textarea[name="ans_${id}"]`);
+    const checkboxes = document.querySelectorAll(`input[name="ans_${id}"][type="checkbox"]:checked`);
+    if (radios.length > 0) jawaban[id] = radios[0].value;
+    else if (checkboxes.length > 0) jawaban[id] = Array.from(checkboxes).map(c=>c.value);
+    else if (textarea) jawaban[id] = textarea.value;
+  });
+  return jawaban;
+}
+
+async function submitUjian() {
+  if (!confirm('Yakin ingin mengumpulkan jawaban?')) return;
+  clearInterval(interval);
+  const jawaban = collectAnswers();
+  try {
+    const res = await fetch('/murid/ujian/'+ujianId+'/submit', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({jawaban}) });
+    const data = await res.json();
+    if (data.ok) {
+      document.body.innerHTML = `<div style="display:grid;place-items:center;height:100vh;text-align:center;padding:20px;">
+        <div><h1 style="color:var(--brand);">Ujian Selesai!</h1>
+        <p style="font-size:1.3rem;">Nilai: <strong>${data.nilai}</strong></p>
+        <p>Benar: ${data.benar} | Salah: ${data.salah} | Kosong: ${data.kosong}</p>
+        <a href="/murid/ujian" class="btn btn-primary" style="margin-top:20px;">Kembali</a></div></div>`;
+    }
+  } catch(e) { alert('Gagal submit. Coba lagi.'); }
+}
+
+// Anti-cheat
+if (antiCheat) {
+  const warn = document.getElementById('violationWarn');
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { violations++; warn.style.display='block'; setTimeout(()=>warn.style.display='none',3000); fetch('/murid/ujian/'+ujianId+'/violation',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}); }
+  });
+  window.addEventListener('blur', () => { violations++; warn.style.display='block'; setTimeout(()=>warn.style.display='none',3000); fetch('/murid/ujian/'+ujianId+'/violation',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}); });
+  document.addEventListener('contextmenu', e => e.preventDefault());
+  document.addEventListener('keydown', e => { if(e.ctrlKey&&(e.key==='c'||e.key==='v'||e.key==='u')) e.preventDefault(); });
+  // Prevent multi-login: save session marker
+  const marker = 'cbt_'+ujianId+'_'+Date.now();
+  sessionStorage.setItem('cbt_active', marker);
+  setInterval(() => { if(sessionStorage.getItem('cbt_active')!==marker) { alert('Multi-login terdeteksi!'); submitUjian(); } }, 2000);
+}
+</script>

@@ -1,0 +1,1 @@
+<div class="page-header"><h1>Chat Rooms</h1></div><div class="card"><% rooms.forEach(r=>{ %><div style="padding:8px 0;border-bottom:1px solid var(--border);"><strong><%= r.nama||('Room '+r.id) %></strong> (<%= r.members %> anggota)</div><% }) %><% if(!rooms.length) { %><p class="text-muted">Belum ada chat room.</p><% } %></div>

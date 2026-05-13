@@ -1,7 +1,7 @@
 {
   "name": "perpustakaan-rubela",
-  "version": "1.0.0",
-  "description": "Website Perpustakaan Bimbel Rubela Indonesia (Admin, Tutor, Murid)",
+  "version": "2.0.0",
+  "description": "Website Perpustakaan & LMS Bimbel Rubela Indonesia (Admin, Tutor, Murid)",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -9,6 +9,7 @@
     "seed": "node src/db/seed.js"
   },
   "dependencies": {
+    "axios": "^1.7.0",
     "bcryptjs": "^2.4.3",
     "better-sqlite3": "^11.3.0",
     "connect-flash": "^0.1.1",
@@ -19,8 +20,10 @@
     "express-session": "^1.18.0",
     "method-override": "^3.0.0",
     "multer": "^1.4.5-lts.1",
+    "node-cron": "^3.0.3",
     "pdfkit": "^0.15.0",
     "qrcode": "^1.5.4",
+    "socket.io": "^4.7.5",
     "xlsx": "^0.18.5"
   }
 }

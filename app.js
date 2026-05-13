@@ -1,7 +1,3 @@
-// File ini berisi aplikasi Express tanpa app.listen.
-// Dipakai oleh:
-//   - server.js (untuk local / Railway / Render / VPS)
-//   - api/index.js (untuk Vercel serverless)
 require('dotenv').config();
 const path = require('path');
 const express = require('express');
@@ -17,66 +13,47 @@ const { createT, getSupportedLangs } = require('./src/utils/i18n');
 
 const app = express();
 
-// View engine
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'src/views'));
 app.use(expressLayouts);
 app.set('layout', 'layouts/main');
 
-// Middlewares
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(methodOverride('_method'));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Kalau UPLOAD_DIR di-override (misal /data/uploads di Railway volume),
-// expose juga ke URL /uploads supaya <a href="/uploads/xxx.pdf"> tetap jalan.
 if (process.env.UPLOAD_DIR) {
   app.use('/uploads', express.static(process.env.UPLOAD_DIR));
 }
 
-// Di serverless (Vercel), MemoryStore akan reset tiap invocation.
-// Untuk production, gunakan Redis / Postgres session store.
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || 'rubela-secret',
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      maxAge: 1000 * 60 * 60 * 24 * 7,
-      // Vercel pakai HTTPS, jadi cookie secure kalau production
-      secure: process.env.NODE_ENV === 'production' && process.env.VERCEL ? true : false,
-      sameSite: 'lax',
-    },
-  })
-);
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'rubela-secret-2025',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { maxAge: 1000 * 60 * 60 * 24 * 7 },
+}));
 app.use(flash());
 
-// Globals untuk semua view + i18n
+// Global middleware - i18n + user + timezone
 app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
   res.locals.success = req.flash('success');
   res.locals.error = req.flash('error');
   res.locals.currentPath = req.path;
 
-  // Resolve bahasa: query ?lang=en > session > user DB > default 'id'
-  let lang = 'id';
+  // Language
+  let lang = req.session.lang || 'id';
   if (req.query.lang && getSupportedLangs().includes(req.query.lang)) {
     lang = req.query.lang;
     req.session.lang = lang;
-  } else if (req.session.lang) {
-    lang = req.session.lang;
-  } else if (req.session.user) {
-    const u = db.prepare('SELECT bahasa FROM users WHERE id=?').get(req.session.user.id);
-    if (u && u.bahasa && getSupportedLangs().includes(u.bahasa)) {
-      lang = u.bahasa;
-      req.session.lang = lang;
-    }
   }
-  const t = createT(lang);
   res.locals.lang = lang;
-  res.locals.t = t;
-  res.locals.siteName = t('app.name');
+  res.locals.t = createT(lang);
+  res.locals.siteName = 'E-Library Rubela';
+
+  // Real-time clock data for views
+  res.locals.serverTime = new Date().toISOString();
   next();
 });
 
@@ -89,16 +66,13 @@ app.use('/murid', require('./src/routes/murid'));
 
 // 404
 app.use((req, res) => {
-  res.status(404).render('errors/404', { title: 'Halaman Tidak Ditemukan' });
+  res.status(404).render('errors/404', { title: '404' });
 });
 
 // Error handler
 app.use((err, req, res, next) => {
   console.error('[ERROR]', err);
-  res.status(500).render('errors/500', {
-    title: 'Terjadi Kesalahan',
-    message: err.message,
-  });
+  res.status(500).render('errors/500', { title: 'Error', message: err.message });
 });
 
 module.exports = app;
