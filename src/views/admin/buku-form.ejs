@@ -54,15 +54,43 @@
     <label>Sinopsis</label>
     <textarea name="sinopsis" class="form-control" rows="4"><%= b ? (b.sinopsis||'') : '' %></textarea>
   </div>
+
+  <div class="card" style="background:var(--brand-light); border:0; padding:14px;">
+    <h4 style="margin:0 0 6px;">&#128640; Hemat Disk (Rekomendasi)</h4>
+    <p class="text-muted" style="font-size:0.88rem; margin:0;">
+      Daripada upload file PDF ke server (makan disk), <strong>gunakan URL eksternal</strong> dari
+      Google Drive, Cloudinary, Supabase Storage, atau hosting gratis lainnya.
+      <br/>
+      Contoh Drive: <code>https://drive.google.com/file/d/ABC123/view?usp=sharing</code>
+    </p>
+  </div>
+
+  <div class="form-row">
+    <div class="form-group">
+      <label>URL Cover (eksternal)</label>
+      <input type="url" name="cover_url" class="form-control" value="<%= b ? (b.cover_url||'') : '' %>" placeholder="https://..." />
+    </div>
+    <div class="form-group">
+      <label>URL PDF (eksternal)</label>
+      <input type="url" name="pdf_url" class="form-control" value="<%= b ? (b.pdf_url||'') : '' %>" placeholder="https://... .pdf atau Drive share link" />
+    </div>
+  </div>
+
+  <div class="row-flex mt-2" style="padding:8px 0;">
+    <span class="text-muted">ATAU upload langsung ke server (tidak direkomendasikan):</span>
+  </div>
   <div class="form-row">
     <div class="form-group">
       <label>Cover (gambar)</label>
       <input type="file" name="cover" accept="image/*" class="form-control" />
+      <% if (b && b.cover) { %><small>Saat ini: <a href="/uploads/<%= b.cover %>" target="_blank"><%= b.cover %></a></small><% } %>
     </div>
     <div class="form-group">
       <label>File PDF / ePub</label>
       <input type="file" name="file_pdf" accept=".pdf,.epub" class="form-control" />
+      <% if (b && b.file_pdf) { %><small>Saat ini: <a href="/uploads/<%= b.file_pdf %>" target="_blank"><%= b.file_pdf %></a></small><% } %>
     </div>
   </div>
+
   <button class="btn btn-primary"><%= b ? 'Simpan Perubahan' : 'Tambah Buku' %></button>
 </form>

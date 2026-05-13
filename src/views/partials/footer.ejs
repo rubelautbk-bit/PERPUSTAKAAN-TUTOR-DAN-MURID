@@ -2,25 +2,25 @@
   <div style="max-width:1200px; margin:0 auto; display:grid; grid-template-columns: repeat(auto-fit,minmax(200px,1fr)); gap:20px;">
     <div>
       <div class="brand" style="font-weight:700; color:var(--brand); font-size:1.1rem;">
-        <span>Perpustakaan Rubela</span>
+        <span><%= siteName %></span>
       </div>
       <p class="text-muted" style="font-size:0.9rem; margin-top:8px;">
-        Perpustakaan digital Bimbel Rubela Indonesia. Tempat belajar tanpa batas untuk murid dan tutor.
+        <%= t('footer.desc') %>
       </p>
     </div>
     <div>
-      <h4 style="margin:0 0 8px; font-size:0.95rem;">Navigasi</h4>
-      <a href="/katalog" style="display:block; padding:3px 0; color:var(--muted);">Katalog Buku</a>
-      <a href="/pengumuman" style="display:block; padding:3px 0; color:var(--muted);">Pengumuman</a>
-      <a href="/tentang" style="display:block; padding:3px 0; color:var(--muted);">Tentang</a>
+      <h4 style="margin:0 0 8px; font-size:0.95rem;"><%= t('footer.navigation') %></h4>
+      <a href="/katalog" style="display:block; padding:3px 0; color:var(--muted);"><%= t('nav.catalog') %></a>
+      <a href="/pengumuman" style="display:block; padding:3px 0; color:var(--muted);"><%= t('nav.announcements') %></a>
+      <a href="/tentang" style="display:block; padding:3px 0; color:var(--muted);"><%= t('nav.about') %></a>
     </div>
     <div>
-      <h4 style="margin:0 0 8px; font-size:0.95rem;">Akun</h4>
-      <a href="/auth/login" style="display:block; padding:3px 0; color:var(--muted);">Masuk</a>
-      <a href="/auth/register" style="display:block; padding:3px 0; color:var(--muted);">Daftar</a>
+      <h4 style="margin:0 0 8px; font-size:0.95rem;"><%= t('footer.account') %></h4>
+      <a href="/auth/login" style="display:block; padding:3px 0; color:var(--muted);"><%= t('nav.login') %></a>
+      <a href="/auth/register" style="display:block; padding:3px 0; color:var(--muted);"><%= t('nav.register') %></a>
     </div>
     <div>
-      <h4 style="margin:0 0 8px; font-size:0.95rem;">Kontak</h4>
+      <h4 style="margin:0 0 8px; font-size:0.95rem;"><%= t('footer.contact') %></h4>
       <p class="text-muted" style="margin:0; font-size:0.88rem;">
         info@rubela.id<br>
         WhatsApp: 0812-0000-0000
@@ -28,6 +28,6 @@
     </div>
   </div>
   <div class="text-center text-muted" style="margin-top:20px; font-size:0.85rem; border-top:1px solid var(--border); padding-top:14px;">
-    &copy; <%= new Date().getFullYear() %> Bimbel Rubela Indonesia. All rights reserved.
+    &copy; <%= new Date().getFullYear() %> Bimbel Rubela Indonesia. <%= t('footer.rights') %>
   </div>
 </footer>

@@ -1,0 +1,39 @@
+<div class="page-header">
+  <h1>Import Buku dari Excel</h1>
+  <a href="/admin/buku" class="btn btn-secondary">Kembali</a>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <h3>Upload File Excel</h3>
+    <form method="POST" action="/admin/buku/import" enctype="multipart/form-data">
+      <div class="form-group">
+        <label>File (.xlsx)</label>
+        <input type="file" name="file" accept=".xlsx,.xls" class="form-control" required />
+      </div>
+      <button class="btn btn-primary">Import Sekarang</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h3>Format File Excel</h3>
+    <p>Gunakan template berikut untuk memastikan format benar:</p>
+    <a href="/admin/buku/import-template.xlsx" class="btn btn-secondary">&#128229; Download Template</a>
+
+    <h4 class="mt-3">Kolom yang dikenali:</h4>
+    <ul style="font-size:0.9rem;">
+      <li><code>judul</code> (wajib)</li>
+      <li><code>penulis</code></li>
+      <li><code>penerbit</code></li>
+      <li><code>tahun</code></li>
+      <li><code>isbn</code></li>
+      <li><code>bahasa</code> (default: Indonesia)</li>
+      <li><code>kategori</code> (nama kategori yang sudah ada)</li>
+      <li><code>sinopsis</code></li>
+      <li><code>jumlah_halaman</code></li>
+      <li><code>stok</code> (default: 1)</li>
+      <li><code>cover_url</code> (URL eksternal)</li>
+      <li><code>pdf_url</code> (URL eksternal - HEMAT DISK!)</li>
+    </ul>
+  </div>
+</div>

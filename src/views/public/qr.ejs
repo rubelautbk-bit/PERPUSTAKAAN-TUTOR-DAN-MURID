@@ -1,0 +1,18 @@
+<div class="page-header">
+  <div>
+    <a href="/buku/<%= buku.id %>" class="text-muted">&larr; <%= t('common.back') %></a>
+    <h1 style="margin:4px 0;"><%= t('qr.title', { title: buku.judul }) %></h1>
+    <p class="subtitle"><%= t('qr.subtitle') %></p>
+  </div>
+  <button onclick="window.print()" class="btn btn-primary"><%= t('common.print') %></button>
+</div>
+
+<div class="card text-center" style="padding:40px;">
+  <img src="<%= qrDataUrl %>" alt="QR <%= buku.judul %>" style="max-width:320px;" />
+  <h3 class="mt-2"><%= buku.judul %></h3>
+  <p class="text-muted"><%= buku.penulis %></p>
+  <% if (buku.isbn) { %><p class="text-muted" style="font-size:0.85rem;">ISBN: <%= buku.isbn %></p><% } %>
+  <p class="text-muted" style="font-size:0.82rem; margin-top:10px;"><%= url %></p>
+</div>
+
+<style>@media print { .topbar, .sidebar, .btn, footer { display:none !important; } .main { padding:0 !important; } }</style>

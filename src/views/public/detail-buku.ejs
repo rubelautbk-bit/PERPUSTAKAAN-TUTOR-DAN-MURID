@@ -1,75 +1,83 @@
 <div class="book-detail card">
   <div>
-    <div class="cover-lg"><%= buku.judul %></div>
+    <div class="cover-lg" <%= coverUrl ? `style="background-image:url('${coverUrl}'); background-size:cover; background-position:center;"` : '' %>>
+      <% if (!coverUrl) { %><%= buku.judul %><% } %>
+    </div>
+
     <div style="display:grid; gap:8px; margin-top:16px;">
+      <% if (pdfUrl) { %>
+        <a href="/buku/<%= buku.id %>/baca" class="btn btn-warning btn-block">
+          &#128214; <%= t('book.readOnline') %>
+        </a>
+      <% } %>
       <% if (user && user.role === 'murid') { %>
         <form method="POST" action="/murid/pinjam/<%= buku.id %>">
-          <button class="btn btn-primary btn-block" <%= buku.stok_tersedia === 0 ? 'disabled' : '' %>>Pinjam Buku</button>
+          <button class="btn btn-primary btn-block" <%= buku.stok_tersedia === 0 ? 'disabled' : '' %>><%= t('book.borrow') %></button>
         </form>
         <form method="POST" action="/murid/wishlist/<%= buku.id %>">
-          <button class="btn btn-secondary btn-block">+ Wishlist</button>
+          <button class="btn btn-secondary btn-block"><%= t('book.wishlistAdd') %></button>
         </form>
-        <% if (buku.file_pdf) { %>
-          <a href="/uploads/<%= buku.file_pdf %>" target="_blank" class="btn btn-warning btn-block">Baca Online</a>
-        <% } %>
       <% } else if (!user) { %>
-        <a href="/auth/login" class="btn btn-primary btn-block">Login untuk Meminjam</a>
+        <a href="/auth/login" class="btn btn-primary btn-block"><%= t('book.loginToBorrow') %></a>
       <% } %>
+      <a href="/buku/<%= buku.id %>/qr" class="btn btn-secondary btn-block" target="_blank">
+        &#128202; <%= t('book.qr') %>
+      </a>
     </div>
   </div>
 
   <div>
     <span class="badge"><%= buku.kategori_nama || 'Umum' %></span>
     <h1 style="margin:8px 0 4px;"><%= buku.judul %></h1>
-    <p class="text-muted" style="margin:0;">oleh <strong><%= buku.penulis %></strong> &middot; <%= buku.penerbit %></p>
+    <p class="text-muted" style="margin:0;"><%= t('book.byAuthor') %> <strong><%= buku.penulis %></strong> &middot; <%= buku.penerbit %></p>
 
     <div class="row-flex mt-2">
-      <div><span class="rating-star">&#9733;</span> <strong><%= buku.rating %></strong> (<%= buku.jumlah_rating %> ulasan)</div>
-      <div><%= buku.dibaca %> pembaca</div>
+      <div><span class="rating-star">&#9733;</span> <strong><%= buku.rating %></strong> (<%= t('book.reviewCount', { n: buku.jumlah_rating }) %>)</div>
+      <div><%= t('book.readersLabel', { n: buku.dibaca }) %></div>
       <% if (buku.stok_tersedia > 0) { %>
-        <span class="badge">Tersedia: <%= buku.stok_tersedia %>/<%= buku.stok %></span>
+        <span class="badge"><%= t('book.availableStock', { n: buku.stok_tersedia, total: buku.stok }) %></span>
       <% } else { %>
-        <span class="badge red">Habis dipinjam</span>
+        <span class="badge red"><%= t('book.outOfStock') %></span>
       <% } %>
     </div>
 
-    <h4 class="mt-3">Sinopsis</h4>
-    <p><%= buku.sinopsis || 'Belum ada sinopsis.' %></p>
+    <h4 class="mt-3"><%= t('book.synopsis') %></h4>
+    <p><%= buku.sinopsis || t('book.noSynopsis') %></p>
 
-    <h4>Detail</h4>
+    <h4><%= t('book.details') %></h4>
     <table class="tbl">
-      <tr><td><strong>Tahun Terbit</strong></td><td><%= buku.tahun %></td></tr>
-      <tr><td><strong>Jumlah Halaman</strong></td><td><%= buku.jumlah_halaman %></td></tr>
-      <tr><td><strong>Bahasa</strong></td><td><%= buku.bahasa %></td></tr>
-      <tr><td><strong>ISBN</strong></td><td><%= buku.isbn || '-' %></td></tr>
-      <tr><td><strong>Penerbit</strong></td><td><%= buku.penerbit %></td></tr>
+      <tr><td><strong><%= t('book.year') %></strong></td><td><%= buku.tahun %></td></tr>
+      <tr><td><strong><%= t('book.pages') %></strong></td><td><%= buku.jumlah_halaman %></td></tr>
+      <tr><td><strong><%= t('book.language') %></strong></td><td><%= buku.bahasa %></td></tr>
+      <tr><td><strong><%= t('book.isbn') %></strong></td><td><%= buku.isbn || '-' %></td></tr>
+      <tr><td><strong><%= t('book.publisher') %></strong></td><td><%= buku.penerbit %></td></tr>
     </table>
 
-    <h4 class="mt-3">Ulasan Pembaca</h4>
+    <h4 class="mt-3"><%= t('book.reviews') %></h4>
     <% if (user && user.role === 'murid') { %>
       <form method="POST" action="/murid/rating/<%= buku.id %>" class="card" style="background:var(--bg); padding:14px;">
         <div class="form-row">
           <div class="form-group">
-            <label>Rating (1-5)</label>
+            <label><%= t('book.rate') %></label>
             <select name="nilai" class="form-control" required>
-              <option value="5">&#9733;&#9733;&#9733;&#9733;&#9733; - Sempurna</option>
-              <option value="4">&#9733;&#9733;&#9733;&#9733; - Bagus</option>
-              <option value="3">&#9733;&#9733;&#9733; - Cukup</option>
-              <option value="2">&#9733;&#9733; - Kurang</option>
-              <option value="1">&#9733; - Buruk</option>
+              <option value="5">&#9733;&#9733;&#9733;&#9733;&#9733; - <%= t('book.ratingSuperb') %></option>
+              <option value="4">&#9733;&#9733;&#9733;&#9733; - <%= t('book.ratingGood') %></option>
+              <option value="3">&#9733;&#9733;&#9733; - <%= t('book.ratingFair') %></option>
+              <option value="2">&#9733;&#9733; - <%= t('book.ratingPoor') %></option>
+              <option value="1">&#9733; - <%= t('book.ratingBad') %></option>
             </select>
           </div>
         </div>
         <div class="form-group">
-          <label>Ulasan</label>
-          <textarea name="ulasan" class="form-control" placeholder="Bagaimana pendapatmu tentang buku ini?" required></textarea>
+          <label><%= t('book.review') %></label>
+          <textarea name="ulasan" class="form-control" placeholder="<%= t('book.reviewPlaceholder') %>" required></textarea>
         </div>
-        <button class="btn btn-primary">Kirim Ulasan</button>
+        <button class="btn btn-primary"><%= t('book.sendReview') %></button>
       </form>
     <% } %>
 
     <% if (ulasan.length === 0) { %>
-      <p class="text-muted">Belum ada ulasan. Jadilah yang pertama!</p>
+      <p class="text-muted"><%= t('book.noReviews') %></p>
     <% } else { %>
       <% ulasan.forEach(r => { %>
         <div style="padding:12px 0; border-bottom:1px solid var(--border);">
@@ -80,7 +88,7 @@
             </span>
           </div>
           <p style="margin:4px 0 0;"><%= r.ulasan %></p>
-          <div class="text-muted" style="font-size:0.8rem;"><%= new Date(r.created_at).toLocaleDateString('id-ID') %></div>
+          <div class="text-muted" style="font-size:0.8rem;"><%= new Date(r.created_at).toLocaleDateString(lang === 'en' ? 'en-US' : 'id-ID') %></div>
         </div>
       <% }) %>
     <% } %>
@@ -89,7 +97,7 @@
 
 <% if (rekomendasi.length > 0) { %>
   <div class="card mt-3">
-    <h3>Buku Sejenis</h3>
+    <h3><%= t('book.recommendedBooks') %></h3>
     <div class="book-grid">
       <% rekomendasi.forEach(b => { %>
         <a href="/buku/<%= b.id %>" class="book-card">

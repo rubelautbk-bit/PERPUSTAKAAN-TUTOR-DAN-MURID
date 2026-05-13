@@ -1,28 +1,28 @@
 <section class="hero">
-  <h1>Perpustakaan Digital Bimbel Rubela</h1>
-  <p>Akses ribuan buku, materi belajar, dan diskusi dengan tutor — semua dalam satu platform yang mudah digunakan.</p>
+  <h1><%= t('landing.heroTitle') %></h1>
+  <p><%= t('landing.heroDesc') %></p>
   <div class="cta">
-    <a href="/katalog" class="btn btn-light">Jelajahi Katalog</a>
+    <a href="/katalog" class="btn btn-light"><%= t('landing.exploreBtn') %></a>
     <% if (!user) { %>
-      <a href="/auth/register" class="btn btn-warning">Daftar Gratis</a>
+      <a href="/auth/register" class="btn btn-warning"><%= t('landing.registerFree') %></a>
     <% } %>
   </div>
 </section>
 
 <div class="stat-grid">
-  <div class="stat"><div class="label">Koleksi Buku</div><div class="value"><%= totalBuku %></div></div>
-  <div class="stat accent"><div class="label">Kategori</div><div class="value"><%= totalKategori %></div></div>
-  <div class="stat blue"><div class="label">Tutor</div><div class="value"><%= totalTutor %></div></div>
-  <div class="stat red"><div class="label">Murid</div><div class="value"><%= totalMurid %></div></div>
+  <div class="stat"><div class="label"><%= t('landing.statCollection') %></div><div class="value"><%= totalBuku %></div></div>
+  <div class="stat accent"><div class="label"><%= t('landing.statCategories') %></div><div class="value"><%= totalKategori %></div></div>
+  <div class="stat blue"><div class="label"><%= t('landing.statTutors') %></div><div class="value"><%= totalTutor %></div></div>
+  <div class="stat red"><div class="label"><%= t('landing.statStudents') %></div><div class="value"><%= totalMurid %></div></div>
 </div>
 
 <div class="card">
   <div class="page-header">
     <div>
-      <h2 style="margin:0;">Buku Populer</h2>
-      <p class="subtitle">Paling sering dibaca minggu ini</p>
+      <h2 style="margin:0;"><%= t('landing.popular') %></h2>
+      <p class="subtitle"><%= t('landing.popularDesc') %></p>
     </div>
-    <a href="/katalog" class="btn btn-sm btn-secondary">Lihat semua</a>
+    <a href="/katalog" class="btn btn-sm btn-secondary"><%= t('common.seeAll') %></a>
   </div>
   <div class="book-grid">
     <% bukuPopuler.forEach(b => { %>
@@ -33,7 +33,7 @@
           <div class="author"><%= b.penulis %></div>
           <div class="meta">
             <span><span class="rating-star">&#9733;</span> <%= b.rating %></span>
-            <span><%= b.dibaca %> dibaca</span>
+            <span><%= t('landing.readersCount', { n: b.dibaca }) %></span>
           </div>
         </div>
       </a>
@@ -43,7 +43,7 @@
 
 <div class="grid-2">
   <div class="card">
-    <h3>Buku Baru Ditambahkan</h3>
+    <h3><%= t('landing.newBooks') %></h3>
     <% bukuTerbaru.forEach(b => { %>
       <div style="display:flex; gap:12px; padding:10px 0; border-bottom:1px solid var(--border);">
         <div style="width:48px; height:64px; background:linear-gradient(135deg,var(--brand),var(--brand-dark)); border-radius:4px; flex-shrink:0;"></div>
@@ -55,12 +55,12 @@
     <% }) %>
   </div>
   <div class="card">
-    <h3>Pengumuman Terbaru</h3>
+    <h3><%= t('landing.latestAnnouncements') %></h3>
     <% pengumumanTerbaru.forEach(p => { %>
       <div style="padding:10px 0; border-bottom:1px solid var(--border);">
         <span class="badge"><%= p.tipe %></span>
         <a href="/pengumuman/<%= p.id %>" style="font-weight:600; color:var(--text); display:block; margin-top:4px;"><%= p.judul %></a>
-        <div class="text-muted" style="font-size:0.82rem;"><%= new Date(p.created_at).toLocaleDateString('id-ID') %></div>
+        <div class="text-muted" style="font-size:0.82rem;"><%= new Date(p.created_at).toLocaleDateString(lang === 'en' ? 'en-US' : 'id-ID') %></div>
       </div>
     <% }) %>
   </div>

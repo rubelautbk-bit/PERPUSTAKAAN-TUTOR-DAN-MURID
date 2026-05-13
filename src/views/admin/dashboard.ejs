@@ -1,27 +1,27 @@
 <div class="page-header">
   <div>
-    <h1>Dashboard Admin</h1>
-    <p class="subtitle">Ringkasan aktivitas perpustakaan</p>
+    <h1><%= t('admin.dashboardTitle') %></h1>
+    <p class="subtitle"><%= t('admin.dashboardSubtitle') %></p>
   </div>
   <div class="row-flex">
-    <a href="/admin/buku/new" class="btn btn-primary">+ Tambah Buku</a>
-    <a href="/admin/pengumuman" class="btn btn-secondary">+ Pengumuman</a>
+    <a href="/admin/buku/new" class="btn btn-primary"><%= t('admin.addBook') %></a>
+    <a href="/admin/pengumuman" class="btn btn-secondary"><%= t('admin.addAnnouncement') %></a>
   </div>
 </div>
 
 <div class="stat-grid">
-  <div class="stat"><div class="label">Total Buku</div><div class="value"><%= s.totalBuku %></div></div>
-  <div class="stat accent"><div class="label">Total User</div><div class="value"><%= s.totalUser %></div></div>
-  <div class="stat blue"><div class="label">Murid</div><div class="value"><%= s.totalMurid %></div></div>
-  <div class="stat blue"><div class="label">Tutor</div><div class="value"><%= s.totalTutor %></div></div>
-  <div class="stat"><div class="label">Sedang Dipinjam</div><div class="value"><%= s.totalPinjam %></div></div>
-  <div class="stat accent"><div class="label">Menunggu Approve</div><div class="value"><%= s.totalMenunggu %></div></div>
-  <div class="stat red"><div class="label">Total Denda</div><div class="value">Rp <%= s.totalDenda.toLocaleString('id-ID') %></div></div>
+  <div class="stat"><div class="label"><%= t('admin.statBooks') %></div><div class="value"><%= s.totalBuku %></div></div>
+  <div class="stat accent"><div class="label"><%= t('admin.statUsers') %></div><div class="value"><%= s.totalUser %></div></div>
+  <div class="stat blue"><div class="label"><%= t('admin.statStudents') %></div><div class="value"><%= s.totalMurid %></div></div>
+  <div class="stat blue"><div class="label"><%= t('admin.statTutors') %></div><div class="value"><%= s.totalTutor %></div></div>
+  <div class="stat"><div class="label"><%= t('admin.statBorrowing') %></div><div class="value"><%= s.totalPinjam %></div></div>
+  <div class="stat accent"><div class="label"><%= t('admin.statPending') %></div><div class="value"><%= s.totalMenunggu %></div></div>
+  <div class="stat red"><div class="label"><%= t('admin.statFines') %></div><div class="value">Rp <%= s.totalDenda.toLocaleString(lang === 'en' ? 'en-US' : 'id-ID') %></div></div>
 </div>
 
 <div class="grid-2">
   <div class="card">
-    <h3>Buku Paling Populer</h3>
+    <h3><%= t('admin.popularBooks') %></h3>
     <div class="bar-chart">
       <% const max = Math.max(1, ...bukuPopuler.map(b=>b.dibaca)); %>
       <% bukuPopuler.forEach(b => { %>
@@ -35,9 +35,9 @@
   </div>
 
   <div class="card">
-    <h3>Murid Paling Aktif</h3>
+    <h3><%= t('admin.activeStudents') %></h3>
     <table class="tbl">
-      <thead><tr><th>Nama</th><th>Total Pinjam</th></tr></thead>
+      <thead><tr><th><%= t('common.name') %></th><th><%= t('admin.totalBorrows') %></th></tr></thead>
       <tbody>
         <% userAktif.forEach(u => { %>
           <tr><td><%= u.name %></td><td><%= u.total %></td></tr>
@@ -49,21 +49,21 @@
 
 <div class="grid-2 mt-3">
   <div class="card">
-    <h3>Tutor Paling Aktif</h3>
+    <h3><%= t('admin.activeTutors') %></h3>
     <table class="tbl">
-      <thead><tr><th>Nama</th><th>Kelas</th><th>Materi</th></tr></thead>
+      <thead><tr><th><%= t('common.name') %></th><th><%= t('sidebar.classes') %></th><th><%= t('sidebar.materials') %></th></tr></thead>
       <tbody>
-        <% tutorAktif.forEach(t => { %>
-          <tr><td><%= t.name %></td><td><%= t.kelas %></td><td><%= t.materi %></td></tr>
+        <% tutorAktif.forEach(tt => { %>
+          <tr><td><%= tt.name %></td><td><%= tt.kelas %></td><td><%= tt.materi %></td></tr>
         <% }) %>
       </tbody>
     </table>
   </div>
 
   <div class="card">
-    <h3>Peminjaman Terbaru</h3>
+    <h3><%= t('admin.recentBorrows') %></h3>
     <table class="tbl">
-      <thead><tr><th>Murid</th><th>Buku</th><th>Status</th></tr></thead>
+      <thead><tr><th><%= t('role.murid') %></th><th><%= t('book.title') %></th><th><%= t('common.status') %></th></tr></thead>
       <tbody>
         <% peminjamanTerbaru.forEach(p => { %>
           <tr>

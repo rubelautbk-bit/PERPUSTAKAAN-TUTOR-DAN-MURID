@@ -1,5 +1,7 @@
 const express = require('express');
+const QRCode = require('qrcode');
 const db = require('../db/database');
+const { resolvePdfUrl, resolveCoverUrl, isPdfJsCompatible, getDriveEmbed } = require('../utils/bookFile');
 
 const router = express.Router();
 
@@ -94,12 +96,85 @@ router.get('/buku/:id', (req, res) => {
     )
     .all(buku.kategori_id, buku.id);
 
+  const pdfUrl = resolvePdfUrl(buku);
+  const coverUrl = resolveCoverUrl(buku);
+
   res.render('public/detail-buku', {
     title: buku.judul,
     buku,
     ulasan,
     rekomendasi,
+    pdfUrl,
+    coverUrl,
   });
+});
+
+// ===== PDF READER =====
+router.get('/buku/:id/baca', (req, res) => {
+  const buku = db.prepare('SELECT * FROM buku WHERE id=?').get(req.params.id);
+  if (!buku) return res.redirect('/katalog');
+
+  const rawUrl = resolvePdfUrl(buku);
+  let pdfMode = 'none';
+  let pdfUrl = null;
+
+  if (rawUrl) {
+    if (rawUrl.includes('drive.google.com')) {
+      pdfMode = 'iframe';
+      pdfUrl = getDriveEmbed(rawUrl);
+    } else if (isPdfJsCompatible(rawUrl)) {
+      pdfMode = 'pdfjs';
+      pdfUrl = rawUrl;
+    } else {
+      pdfMode = 'iframe';
+      pdfUrl = rawUrl;
+    }
+  }
+
+  // Tambahkan counter dibaca (cuma kalau login)
+  if (req.session.user && req.session.user.role === 'murid') {
+    db.prepare('UPDATE buku SET dibaca = dibaca + 1 WHERE id=?').run(buku.id);
+  }
+
+  // Ambil bookmark + highlights + progress existing (cuma kalau login murid)
+  let bookmarks = [];
+  let highlights = [];
+  let initialPage = 1;
+  if (req.session.user && req.session.user.role === 'murid') {
+    bookmarks = db
+      .prepare('SELECT * FROM bookmark WHERE user_id=? AND buku_id=? ORDER BY halaman')
+      .all(req.session.user.id, buku.id);
+    highlights = db
+      .prepare('SELECT * FROM highlight WHERE user_id=? AND buku_id=? ORDER BY halaman, created_at')
+      .all(req.session.user.id, buku.id);
+    const prog = db
+      .prepare('SELECT halaman_terakhir FROM progress_baca WHERE user_id=? AND buku_id=?')
+      .get(req.session.user.id, buku.id);
+    if (prog && prog.halaman_terakhir) initialPage = prog.halaman_terakhir;
+  }
+
+  res.render('public/reader', {
+    title: 'Baca: ' + buku.judul,
+    buku,
+    pdfUrl,
+    pdfMode,
+    bookmarks,
+    highlights,
+    initialPage,
+  });
+});
+
+// ===== QR CODE BUKU =====
+router.get('/buku/:id/qr', async (req, res, next) => {
+  try {
+    const buku = db.prepare('SELECT * FROM buku WHERE id=?').get(req.params.id);
+    if (!buku) return res.redirect('/katalog');
+    const url = `${req.protocol}://${req.get('host')}/buku/${buku.id}`;
+    const qrDataUrl = await QRCode.toDataURL(url, { width: 320, margin: 2 });
+    res.render('public/qr', { title: 'QR Code', buku, qrDataUrl, url });
+  } catch (e) {
+    next(e);
+  }
 });
 
 router.get('/pengumuman', (req, res) => {
@@ -123,6 +198,16 @@ router.get('/pengumuman/:id', (req, res) => {
 
 router.get('/tentang', (req, res) => {
   res.render('public/tentang', { title: 'Tentang Kami' });
+});
+
+// Multi-bahasa switcher
+router.get('/bahasa/:lang', (req, res) => {
+  const lang = req.params.lang === 'en' ? 'en' : 'id';
+  req.session.lang = lang;
+  if (req.session.user) {
+    db.prepare('UPDATE users SET bahasa=? WHERE id=?').run(lang, req.session.user.id);
+  }
+  res.redirect(req.get('Referer') || '/');
 });
 
 module.exports = router;
