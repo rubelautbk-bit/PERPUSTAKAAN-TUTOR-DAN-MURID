@@ -1,0 +1,42 @@
+<div class="page-header">
+  <div>
+    <h1>Peminjaman Buku Saya</h1>
+    <p class="subtitle">Tutor dapat meminjam buku tanpa denda. Masa pinjam: 14 hari (bisa diperpanjang).</p>
+  </div>
+  <a href="/tutor/peminjaman/katalog" class="btn btn-primary">+ Pinjam Buku Baru</a>
+</div>
+
+<div class="card">
+  <table class="tbl">
+    <thead>
+      <tr><th>Buku</th><th>Pinjam</th><th>Kembali</th><th>Status</th><th>Denda</th><th>Aksi</th></tr>
+    </thead>
+    <tbody>
+      <% rows.forEach(function(r) { %>
+        <tr>
+          <td><strong><%= r.judul %></strong><br/><span class="text-muted" style="font-size:0.85rem;"><%= r.penulis %></span></td>
+          <td><%= r.tanggal_pinjam %></td>
+          <td><%= r.tanggal_kembali %></td>
+          <td><span class="badge <%= r.status==='dipinjam'?'blue':(r.status==='dikembalikan'?'':'warn') %>"><%= r.status %></span></td>
+          <td><strong style="color:#22c55e;">Rp 0</strong> <span class="text-muted" style="font-size:0.8rem;">(bebas denda)</span></td>
+          <td class="row-flex">
+            <% if (r.status === 'dipinjam') { %>
+              <form method="POST" action="/tutor/peminjaman/<%= r.id %>/perpanjang">
+                <button class="btn btn-sm btn-secondary">+7 hari</button>
+              </form>
+              <form method="POST" action="/tutor/peminjaman/<%= r.id %>/return">
+                <button class="btn btn-sm btn-primary">Kembalikan</button>
+              </form>
+            <% } %>
+            <a href="/buku/<%= r.buku_id %>" class="btn btn-sm btn-secondary">Lihat</a>
+          </td>
+        </tr>
+      <% }) %>
+      <% if (rows.length === 0) { %>
+        <tr><td colspan="6" class="text-muted text-center" style="padding:30px;">
+          Belum ada peminjaman. <a href="/tutor/peminjaman/katalog">Pinjam buku pertama</a>.
+        </td></tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>

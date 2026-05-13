@@ -1,0 +1,43 @@
+<div class="page-header">
+  <div>
+    <a href="/tutor/peminjaman" class="text-muted">&larr; Peminjaman Saya</a>
+    <h1>Pilih Buku untuk Dipinjam</h1>
+  </div>
+</div>
+
+<form method="GET" class="card" style="padding:10px; display:flex; gap:8px;">
+  <input type="text" name="q" class="form-control" placeholder="Cari judul/penulis..." value="<%= q %>"/>
+  <button class="btn btn-primary">Cari</button>
+  <% if (q) { %><a href="/tutor/peminjaman/katalog" class="btn btn-secondary">Reset</a><% } %>
+</form>
+
+<div class="book-grid">
+  <% buku.forEach(function(b) { %>
+    <div class="book-card">
+      <a href="/buku/<%= b.id %>">
+        <div class="book-cover"><%= b.judul %></div>
+      </a>
+      <div class="book-info">
+        <div class="title"><%= b.judul %></div>
+        <div class="author"><%= b.penulis || '' %></div>
+        <div class="meta">
+          <span class="badge"><%= b.kategori_nama || '-' %></span>
+          <span><%= b.tahun || '' %></span>
+        </div>
+        <div class="meta">
+          <% if (b.stok_tersedia > 0) { %>
+            <span class="badge blue">Tersedia: <%= b.stok_tersedia %></span>
+          <% } else { %>
+            <span class="badge red">Habis</span>
+          <% } %>
+        </div>
+        <form method="POST" action="/tutor/peminjaman/pinjam/<%= b.id %>" class="mt-2">
+          <button class="btn btn-sm btn-primary btn-block" <%= b.stok_tersedia<=0?'disabled':'' %>>Pinjam</button>
+        </form>
+      </div>
+    </div>
+  <% }) %>
+  <% if (buku.length === 0) { %>
+    <div class="card"><p class="text-muted text-center">Tidak ada buku ditemukan.</p></div>
+  <% } %>
+</div>

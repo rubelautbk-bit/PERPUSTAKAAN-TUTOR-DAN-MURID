@@ -180,6 +180,150 @@ router.get('/ujian/:id/hasil', (req, res) => {
   res.render('tutor/ujian-hasil', { title: 'Hasil', uj, peserta });
 });
 
+// =================== PEMINJAMAN BUKU UNTUK TUTOR (TANPA DENDA) ===================
+router.get('/peminjaman', (req, res) => {
+  const tid = req.session.user.id;
+  // Tutor peminjaman, denda selalu 0
+  const rows = db.prepare(
+    `SELECT p.*, b.judul, b.penulis FROM peminjaman p
+     JOIN buku b ON b.id=p.buku_id
+     WHERE p.user_id=? ORDER BY p.created_at DESC`
+  ).all(tid);
+  res.render('tutor/peminjaman', { title: 'Peminjaman Buku Saya', rows });
+});
+router.get('/peminjaman/katalog', (req, res) => {
+  const { q='' } = req.query;
+  let sql = `SELECT b.*, k.nama AS kategori_nama FROM buku b LEFT JOIN kategori k ON b.kategori_id=k.id WHERE 1=1`;
+  const params = [];
+  if (q) { sql += ' AND (b.judul LIKE ? OR b.penulis LIKE ?)'; params.push(`%${q}%`,`%${q}%`); }
+  sql += ' ORDER BY b.judul LIMIT 100';
+  const buku = db.prepare(sql).all(...params);
+  res.render('tutor/peminjaman-katalog', { title: 'Pilih Buku', buku, q });
+});
+router.post('/peminjaman/pinjam/:bukuId', (req, res) => {
+  const tid = req.session.user.id;
+  const buku = db.prepare('SELECT * FROM buku WHERE id=?').get(req.params.bukuId);
+  if (!buku) { req.flash('error','Buku tidak ditemukan.'); return res.redirect('/tutor/peminjaman/katalog'); }
+  if (buku.stok_tersedia <= 0) { req.flash('error','Stok habis.'); return res.redirect('/tutor/peminjaman/katalog'); }
+  const today = new Date(); const due = new Date(); due.setDate(today.getDate()+14);
+  // Tutor peminjaman otomatis disetujui
+  db.prepare('INSERT INTO peminjaman (user_id,buku_id,tanggal_pinjam,tanggal_kembali,status,denda) VALUES (?,?,?,?,?,0)')
+    .run(tid, buku.id, today.toISOString().slice(0,10), due.toISOString().slice(0,10), 'dipinjam');
+  db.prepare('UPDATE buku SET stok_tersedia=stok_tersedia-1 WHERE id=?').run(buku.id);
+  req.flash('success', `Buku "${buku.judul}" berhasil dipinjam (kembalikan sebelum ${due.toISOString().slice(0,10)}).`);
+  res.redirect('/tutor/peminjaman');
+});
+router.post('/peminjaman/:id/return', (req, res) => {
+  const p = db.prepare('SELECT * FROM peminjaman WHERE id=? AND user_id=?').get(req.params.id, req.session.user.id);
+  if (p && p.status === 'dipinjam') {
+    db.prepare("UPDATE peminjaman SET status='dikembalikan',tanggal_dikembalikan=?,denda=0 WHERE id=?")
+      .run(new Date().toISOString().slice(0,10), p.id);
+    db.prepare('UPDATE buku SET stok_tersedia=stok_tersedia+1 WHERE id=?').run(p.buku_id);
+    req.flash('success','Buku dikembalikan.');
+  }
+  res.redirect('/tutor/peminjaman');
+});
+router.post('/peminjaman/:id/perpanjang', (req, res) => {
+  const p = db.prepare('SELECT * FROM peminjaman WHERE id=? AND user_id=?').get(req.params.id, req.session.user.id);
+  if (p && p.status === 'dipinjam') {
+    const d = new Date(p.tanggal_kembali); d.setDate(d.getDate()+7);
+    db.prepare('UPDATE peminjaman SET tanggal_kembali=?,perpanjangan=perpanjangan+1 WHERE id=?').run(d.toISOString().slice(0,10), p.id);
+    req.flash('success', `Diperpanjang 7 hari (${d.toISOString().slice(0,10)}).`);
+  }
+  res.redirect('/tutor/peminjaman');
+});
+
+// =================== KARTU ANGGOTA ===================
+router.get('/kartu', (req, res) => {
+  // List semua user tutor/admin bisa lihat
+  const users = db.prepare("SELECT id,nomor_anggota,name,email,role,status FROM users WHERE status='active' ORDER BY role, name").all();
+  res.render('tutor/kartu', { title: 'Kartu Anggota', users });
+});
+router.get('/kartu/:id', async (req, res) => {
+  const { generateKartuAnggota } = require('../utils/members');
+  try {
+    const buf = await generateKartuAnggota(+req.params.id);
+    if (!buf) { req.flash('error','User tidak ditemukan.'); return res.redirect('/tutor/kartu'); }
+    res.setHeader('Content-Type','application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="kartu-anggota-${req.params.id}.pdf"`);
+    res.send(buf);
+  } catch(e) { req.flash('error', e.message); res.redirect('/tutor/kartu'); }
+});
+
+// =================== WHATSAPP GATEWAY + KONTAK ===================
+router.get('/wa', (req, res) => {
+  const kontak = db.prepare('SELECT * FROM kontak ORDER BY nama').all();
+  const wa_logs = db.prepare('SELECT wl.*,u.name AS sender FROM wa_log wl LEFT JOIN users u ON u.id=wl.sender_id ORDER BY wl.created_at DESC LIMIT 50').all();
+  const grups = db.prepare('SELECT DISTINCT grup FROM kontak WHERE grup IS NOT NULL').all().map(r=>r.grup);
+  res.render('tutor/wa', { title: 'WhatsApp Gateway', kontak, wa_logs, grups });
+});
+router.post('/wa/kirim', async (req, res) => {
+  const { sendWA } = require('../utils/whatsapp');
+  const { phone, pesan, target_type, grup, user_ids } = req.body;
+  let targets = [];
+  if (target_type === 'single') {
+    targets = [phone];
+  } else if (target_type === 'grup' && grup) {
+    targets = db.prepare('SELECT phone FROM kontak WHERE grup=?').all(grup).map(k=>k.phone);
+  } else if (target_type === 'user') {
+    const ids = Array.isArray(user_ids)?user_ids:[user_ids].filter(Boolean);
+    ids.forEach(uid => {
+      const u = db.prepare('SELECT phone FROM users WHERE id=?').get(uid);
+      if (u && u.phone) targets.push(u.phone);
+    });
+  }
+  let sent = 0, failed = 0;
+  for (const t of targets) {
+    const r = await sendWA(t, pesan);
+    db.prepare('INSERT INTO wa_log (phone,pesan,status,response,sender_id) VALUES (?,?,?,?,?)')
+      .run(t, pesan, r.ok?'sent':'failed', JSON.stringify(r), req.session.user.id);
+    if (r.ok) sent++; else failed++;
+  }
+  req.flash('success', `Pesan terkirim: ${sent} berhasil, ${failed} gagal.`);
+  res.redirect('/tutor/wa');
+});
+router.post('/wa/kontak', (req, res) => {
+  const { nama, phone, grup, catatan } = req.body;
+  db.prepare('INSERT INTO kontak (nama,phone,grup,catatan,created_by) VALUES (?,?,?,?,?)')
+    .run(nama, phone, grup||null, catatan||null, req.session.user.id);
+  req.flash('success','Kontak ditambahkan.');
+  res.redirect('/tutor/wa');
+});
+router.delete('/wa/kontak/:id', (req, res) => {
+  db.prepare('DELETE FROM kontak WHERE id=?').run(req.params.id);
+  req.flash('success','Kontak dihapus.');
+  res.redirect('/tutor/wa');
+});
+router.get('/wa/kontak/export.xlsx', (req, res) => {
+  const XLSX = require('xlsx');
+  const kontak = db.prepare('SELECT nama,phone,grup,catatan FROM kontak ORDER BY nama').all();
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(kontak), 'Kontak');
+  const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+  res.setHeader('Content-Type','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition','attachment; filename="kontak-rubela.xlsx"');
+  res.send(buf);
+});
+router.post('/wa/kontak/import', require('../middleware/upload').single('file'), (req, res) => {
+  if (!req.file) { req.flash('error','File wajib.'); return res.redirect('/tutor/wa'); }
+  const XLSX = require('xlsx');
+  try {
+    const wb = XLSX.readFile(req.file.path);
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+    let ok = 0;
+    rows.forEach(r => {
+      const nama = r.nama || r.Nama;
+      const phone = r.phone || r.Phone || r.HP;
+      if (!nama || !phone) return;
+      db.prepare('INSERT INTO kontak (nama,phone,grup,catatan,created_by) VALUES (?,?,?,?,?)')
+        .run(nama, String(phone), r.grup || r.Grup || null, r.catatan || null, req.session.user.id);
+      ok++;
+    });
+    req.flash('success', `${ok} kontak diimport.`);
+  } catch(e) { req.flash('error', 'Gagal: '+e.message); }
+  res.redirect('/tutor/wa');
+});
+
 // Progress murid
 router.get('/progress', (req, res) => {
   const rows = db.prepare('SELECT u.name,b.judul,pb.halaman_terakhir,pb.persentase,pb.updated_at FROM progress_baca pb JOIN users u ON u.id=pb.user_id JOIN buku b ON b.id=pb.buku_id WHERE u.id IN (SELECT DISTINCT km.user_id FROM kelas_member km JOIN kelas k ON k.id=km.kelas_id WHERE k.tutor_id=?) ORDER BY pb.updated_at DESC').all(req.session.user.id);

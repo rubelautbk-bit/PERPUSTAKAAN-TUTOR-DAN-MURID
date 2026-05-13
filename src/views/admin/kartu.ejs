@@ -1,0 +1,35 @@
+<div class="page-header">
+  <div><h1>Kartu Anggota</h1><p class="subtitle">Kartu anggota otomatis dibuat untuk semua user aktif (admin, tutor, murid).</p></div>
+</div>
+
+<div class="card">
+  <input type="text" id="searchUser" class="form-control" placeholder="Cari nama/role..." oninput="filterCards()"/>
+</div>
+
+<div class="grid-3" id="cardList">
+  <% users.forEach(function(u) { %>
+    <div class="card user-card" data-name="<%= (u.name+' '+u.role+' '+(u.nomor_anggota||'')).toLowerCase() %>">
+      <div class="id-card-preview">
+        <div style="font-size:0.75rem; opacity:0.9;">E-LIBRARY RUBELA</div>
+        <div style="font-size:0.65rem; opacity:0.8; margin-bottom:10px;">KARTU ANGGOTA</div>
+        <div style="font-weight:700; font-size:1.05rem;"><%= u.name %></div>
+        <div style="font-size:0.82rem; margin-top:4px;">No: <%= u.nomor_anggota || '-' %></div>
+        <div style="font-size:0.78rem; margin-top:2px;"><%= u.role.toUpperCase() %> | <%= u.email %></div>
+        <div style="margin-top:10px; font-size:0.7rem; opacity:0.8;">INDOMARC</div>
+      </div>
+      <div class="row-flex mt-2">
+        <a href="/admin/users/<%= u.id %>/kartu" target="_blank" class="btn btn-sm btn-primary">&#128196; PDF</a>
+        <a href="/admin/users/<%= u.id %>/edit" class="btn btn-sm btn-secondary">Edit</a>
+      </div>
+    </div>
+  <% }) %>
+</div>
+
+<script>
+function filterCards() {
+  var q = document.getElementById('searchUser').value.toLowerCase();
+  document.querySelectorAll('.user-card').forEach(function(c) {
+    c.style.display = c.dataset.name.includes(q) ? '' : 'none';
+  });
+}
+</script>

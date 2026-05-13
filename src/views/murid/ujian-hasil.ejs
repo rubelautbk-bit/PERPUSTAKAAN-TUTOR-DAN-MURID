@@ -1,0 +1,116 @@
+<div class="page-header">
+  <div>
+    <a href="/murid/ujian" class="text-muted">&larr; Semua Ujian</a>
+    <h1>Hasil: <%= uj.judul %></h1>
+  </div>
+</div>
+
+<!-- Ringkasan Nilai -->
+<div class="stat-grid">
+  <div class="stat" style="border-left-color:#22c55e;">
+    <div class="label">Nilai</div>
+    <div class="value"><%= peserta.nilai %></div>
+  </div>
+  <div class="stat blue">
+    <div class="label">Benar</div>
+    <div class="value"><%= peserta.benar %></div>
+  </div>
+  <div class="stat red">
+    <div class="label">Salah</div>
+    <div class="value"><%= peserta.salah %></div>
+  </div>
+  <div class="stat accent">
+    <div class="label">Kosong</div>
+    <div class="value"><%= peserta.kosong %></div>
+  </div>
+</div>
+
+<!-- Pembahasan per soal -->
+<div class="card">
+  <h3>Pembahasan Soal</h3>
+  <p class="text-muted">Lihat jawaban Anda dibandingkan kunci jawaban beserta penjelasan.</p>
+</div>
+
+<% soalList.forEach(function(s, i) {
+  var jawabanUser = userJawaban[s.id];
+  var kunci;
+  try { kunci = JSON.parse(s.jawaban_json); } catch(e){ kunci = s.jawaban_json; }
+  var isCorrect = JSON.stringify(jawabanUser) === JSON.stringify(kunci) || jawabanUser === kunci;
+  var opsi = [];
+  try { opsi = JSON.parse(s.opsi_json || '[]'); } catch(e){}
+  var letters = ['A','B','C','D','E','F'];
+%>
+  <div class="card" style="border-left:4px solid <%= isCorrect?'#22c55e':'#dc2626' %>;">
+    <div class="row-flex" style="justify-content:space-between; margin-bottom:10px;">
+      <div>
+        <span class="badge"><%= s.subtest %></span>
+        <strong>Soal <%= i+1 %></strong> (<%= s.poin %> poin)
+      </div>
+      <span class="badge <%= isCorrect?'':'red' %>" style="font-size:0.9rem;">
+        <%= isCorrect ? 'BENAR' : 'SALAH' %>
+      </span>
+    </div>
+
+    <div class="latex-render" style="font-size:1rem; margin-bottom:12px;"><%- s.soal %></div>
+
+    <% if (['pg','pg_kompleks'].includes(s.tipe)) { %>
+      <div style="margin-bottom:12px;">
+        <% opsi.forEach(function(o, oi) {
+          var letter = letters[oi];
+          var isUserAns = Array.isArray(jawabanUser) ? jawabanUser.includes(letter) : (jawabanUser === letter);
+          var isCorrectOpt = Array.isArray(kunci) ? kunci.includes(letter) : (kunci === letter);
+          var bg = '';
+          if (isCorrectOpt) bg = 'background:#d1fae5;';
+          if (isUserAns && !isCorrectOpt) bg = 'background:#fee2e2;';
+        %>
+          <div style="padding:8px; border:1px solid var(--border); border-radius:6px; margin-bottom:6px; <%= bg %>">
+            <strong><%= letter %>.</strong>
+            <span class="latex-render"><%- o %></span>
+            <% if (isCorrectOpt) { %><span class="badge" style="margin-left:8px;">Jawaban Benar</span><% } %>
+            <% if (isUserAns) { %><span class="badge blue" style="margin-left:4px;">Jawaban Anda</span><% } %>
+          </div>
+        <% }) %>
+      </div>
+    <% } else if (s.tipe === 'benar_salah') { %>
+      <div style="margin-bottom:12px;">
+        <strong>Jawaban Anda:</strong> <%= jawabanUser === 'true' ? 'Benar' : (jawabanUser === 'false' ? 'Salah' : 'Kosong') %><br/>
+        <strong>Kunci:</strong> <%= kunci === 'true' ? 'Benar' : 'Salah' %>
+      </div>
+    <% } else { %>
+      <div style="margin-bottom:12px;">
+        <strong>Jawaban Anda:</strong>
+        <div class="card" style="background:var(--bg); padding:10px;">
+          <%= jawabanUser || '(Tidak diisi)' %>
+        </div>
+        <% if (s.tipe !== 'esai') { %>
+          <strong>Kunci:</strong>
+          <div class="card" style="background:#d1fae5; padding:10px;"><%= kunci %></div>
+        <% } %>
+      </div>
+    <% } %>
+
+    <% if (s.penjelasan) { %>
+      <div class="card" style="background:#e0f2fe; padding:12px; border-left:3px solid #0284c7;">
+        <strong>&#128221; Pembahasan:</strong>
+        <div class="latex-render" style="margin-top:6px;"><%- s.penjelasan %></div>
+      </div>
+    <% } %>
+  </div>
+<% }) %>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"/>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.latex-render').forEach(function(el) {
+    renderMathInElement(el, {
+      delimiters: [
+        {left:'$$',right:'$$',display:true},
+        {left:'$',right:'$',display:false},
+        {left:'\\[',right:'\\]',display:true}
+      ]
+    });
+  });
+});
+</script>

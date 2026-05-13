@@ -416,6 +416,32 @@ module.exports = function initSchema(db) {
       FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
     );
 
+    -- ============ KONTAK WA ============
+    CREATE TABLE IF NOT EXISTS kontak (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nama TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      grup TEXT,
+      catatan TEXT,
+      created_by INTEGER,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(created_by) REFERENCES users(id) ON DELETE SET NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS wa_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      phone TEXT NOT NULL,
+      pesan TEXT NOT NULL,
+      status TEXT,
+      response TEXT,
+      sender_id INTEGER,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(sender_id) REFERENCES users(id) ON DELETE SET NULL
+    );
+
+    -- ============ PEMBAHASAN SOAL ============
+    -- (kolom penjelasan sudah ada di bank_soal, tinggal pastikan terpakai)
+
     -- ============ PENGATURAN DENDA ============
     CREATE TABLE IF NOT EXISTS setting (
       key TEXT PRIMARY KEY,

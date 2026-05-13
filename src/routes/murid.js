@@ -191,6 +191,21 @@ router.post('/ujian/:id/violation', express.json(), (req, res) => {
   res.json({ok:true});
 });
 
+// Hasil ujian + pembahasan (muncul SETELAH selesai)
+router.get('/ujian/:id/hasil', (req, res) => {
+  const uid = req.session.user.id;
+  const uj = db.prepare('SELECT * FROM ujian WHERE id=?').get(req.params.id);
+  const peserta = db.prepare('SELECT * FROM ujian_peserta WHERE ujian_id=? AND user_id=?').get(req.params.id, uid);
+  if (!uj || !peserta || peserta.status !== 'selesai') {
+    req.flash('error', 'Pembahasan hanya bisa diakses setelah menyelesaikan ujian.');
+    return res.redirect('/murid/ujian');
+  }
+  const soalList = db.prepare('SELECT bs.* FROM ujian_soal us JOIN bank_soal bs ON bs.id=us.bank_soal_id WHERE us.ujian_id=? ORDER BY us.urutan').all(uj.id);
+  let userJawaban = {};
+  try { userJawaban = JSON.parse(peserta.jawaban_json || '{}'); } catch(e){}
+  res.render('murid/ujian-hasil', { title: 'Hasil: '+uj.judul, uj, peserta, soalList, userJawaban });
+});
+
 // ==================== FORUM ====================
 router.get('/forum', (req, res) => { res.render('murid/forum', { title: 'Forum', list: db.prepare('SELECT f.*,u.name,(SELECT COUNT(*) FROM forum_komentar WHERE forum_id=f.id) komentar FROM forum f JOIN users u ON u.id=f.user_id ORDER BY f.created_at DESC').all() }); });
 router.post('/forum', (req, res) => { db.prepare('INSERT INTO forum (user_id,judul,isi,kategori,kelas_id) VALUES (?,?,?,?,?)').run(req.session.user.id,req.body.judul,req.body.isi,req.body.kategori||'umum',req.body.kelas_id||null); req.flash('success','Diposting.'); res.redirect('/murid/forum'); });

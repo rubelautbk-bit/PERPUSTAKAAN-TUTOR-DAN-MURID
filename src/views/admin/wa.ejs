@@ -1,0 +1,122 @@
+<div class="page-header">
+  <div><h1>WhatsApp Gateway</h1><p class="subtitle">Kirim notifikasi via WhatsApp + kelola kontak</p></div>
+</div>
+
+<div class="card" style="background:#fff3cd;color:#856404;border-left:4px solid #f4a623;padding:12px;">
+  <strong>&#9432; Info:</strong> Setiap pesan otomatis ditambahkan footnote <em>"E-Library Rubela Indonesia"</em>. Gateway: Fonnte.
+</div>
+
+<div class="card" style="padding:6px; display:flex; gap:4px; flex-wrap:wrap;">
+  <button class="btn btn-sm tab-btn active" data-tab="kirim">Kirim Pesan</button>
+  <button class="btn btn-sm tab-btn" data-tab="kontak">Kontak (<%= kontak.length %>)</button>
+  <button class="btn btn-sm tab-btn" data-tab="log">Log Pengiriman</button>
+</div>
+
+<div class="tab-content" data-tab="kirim">
+  <div class="card">
+    <h3>Kirim Pesan</h3>
+    <form method="POST" action="/admin/wa/kirim">
+      <div class="form-group">
+        <label>Target</label>
+        <select name="target_type" class="form-control" id="targetType" onchange="toggleTarget()">
+          <option value="single">Kirim ke 1 nomor</option>
+          <option value="grup">Kirim ke 1 grup kontak</option>
+          <option value="all_kontak">Kirim ke semua kontak</option>
+          <option value="all_murid">Kirim ke semua murid aktif</option>
+        </select>
+      </div>
+      <div class="form-group" id="singleBox">
+        <label>Nomor WhatsApp</label>
+        <input type="text" name="phone" class="form-control" placeholder="08123456789"/>
+      </div>
+      <div class="form-group" id="grupBox" style="display:none;">
+        <label>Grup</label>
+        <select name="grup" class="form-control">
+          <% grups.forEach(function(g) { %><option value="<%= g %>"><%= g %></option><% }) %>
+          <% if (grups.length === 0) { %><option>-- Tidak ada grup --</option><% } %>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Pesan</label>
+        <textarea name="pesan" class="form-control" rows="5" required></textarea>
+      </div>
+      <button class="btn btn-primary">Kirim</button>
+    </form>
+  </div>
+</div>
+
+<div class="tab-content" data-tab="kontak" style="display:none;">
+  <div class="grid-2">
+    <div class="card">
+      <h3>Tambah Kontak</h3>
+      <form method="POST" action="/admin/wa/kontak">
+        <div class="form-group"><label>Nama</label><input name="nama" class="form-control" required/></div>
+        <div class="form-group"><label>Phone</label><input name="phone" class="form-control" required/></div>
+        <div class="form-group"><label>Grup</label><input name="grup" class="form-control"/></div>
+        <div class="form-group"><label>Catatan</label><textarea name="catatan" class="form-control" rows="2"></textarea></div>
+        <button class="btn btn-primary">Tambah</button>
+      </form>
+      <hr style="margin:16px 0;"/>
+      <h4>Import/Export</h4>
+      <form method="POST" action="/admin/wa/kontak/import" enctype="multipart/form-data" class="row-flex">
+        <input type="file" name="file" accept=".xlsx,.xls,.csv" class="form-control" required/>
+        <button class="btn btn-primary">Import</button>
+      </form>
+      <a href="/admin/wa/kontak/export.xlsx" class="btn btn-secondary mt-2">&#128229; Export</a>
+    </div>
+    <div class="card">
+      <h3>Kontak (<%= kontak.length %>)</h3>
+      <table class="tbl">
+        <thead><tr><th>Nama</th><th>Phone</th><th>Grup</th><th></th></tr></thead>
+        <tbody>
+          <% kontak.forEach(function(k) { %>
+            <tr>
+              <td><%= k.nama %></td><td><code><%= k.phone %></code></td><td><span class="badge"><%= k.grup||'-' %></span></td>
+              <td><form method="POST" action="/admin/wa/kontak/<%= k.id %>?_method=DELETE"><button class="btn btn-sm btn-danger">X</button></form></td>
+            </tr>
+          <% }) %>
+          <% if (kontak.length === 0) { %><tr><td colspan="4" class="text-muted text-center">Belum ada.</td></tr><% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="tab-content" data-tab="log" style="display:none;">
+  <div class="card">
+    <h3>Log Pengiriman</h3>
+    <table class="tbl">
+      <thead><tr><th>Waktu</th><th>Penerima</th><th>Pesan</th><th>Status</th><th>Oleh</th></tr></thead>
+      <tbody>
+        <% wa_logs.forEach(function(l) { %>
+          <tr>
+            <td><%= new Date(l.created_at).toLocaleString('id-ID') %></td>
+            <td><code><%= l.phone %></code></td>
+            <td style="max-width:280px;"><%= l.pesan.substring(0,80) %><%= l.pesan.length>80?'...':'' %></td>
+            <td><span class="badge <%= l.status==='sent'?'':'red' %>"><%= l.status %></span></td>
+            <td><%= l.sender||'-' %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+function toggleTarget() {
+  var t = document.getElementById('targetType').value;
+  document.getElementById('singleBox').style.display = (t==='single'?'':'none');
+  document.getElementById('grupBox').style.display = (t==='grup'?'':'none');
+}
+toggleTarget();
+document.querySelectorAll('.tab-btn').forEach(function(b) {
+  b.addEventListener('click', function() {
+    var tab = this.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(function(x){ x.classList.remove('active'); });
+    this.classList.add('active');
+    document.querySelectorAll('.tab-content').forEach(function(c) {
+      c.style.display = (c.dataset.tab === tab) ? '' : 'none';
+    });
+  });
+});
+</script>

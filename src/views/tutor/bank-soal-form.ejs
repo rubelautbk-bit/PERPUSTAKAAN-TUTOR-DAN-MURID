@@ -1,1 +1,213 @@
-<div class="page-header"><h1>Tambah Soal</h1><a href="/tutor/bank-soal" class="btn btn-secondary">Kembali</a></div><div class="card" style="background:var(--brand-light);border:0;padding:14px;margin-bottom:16px;"><strong>LaTeX:</strong> <code>$\frac{a}{b}$</code> inline, <code>914\int_0^1 x dx914</code> display</div><form method="POST" action="/tutor/bank-soal" class="card"><div class="form-row"><div class="form-group"><label>Subtest</label><select name="subtest" class="form-control"><%subtests.forEach(st=>{%><option value="<%=st%>" <%=subtest===st?"selected":""%>><%=st%></option><%})%></select></div><div class="form-group"><label>Tipe</label><select name="tipe" class="form-control"><option value="pg">Pilihan Ganda</option><option value="pg_kompleks">PG Kompleks</option><option value="benar_salah">Benar/Salah</option><option value="isian">Isian</option><option value="esai">Esai</option><option value="menjodohkan">Menjodohkan</option><option value="drag_drop">Drag & Drop</option><option value="labeling">Pelabelan</option></select></div><div class="form-group"><label>Poin</label><input type="number" name="poin" class="form-control" value="1" min="1"/></div></div><div class="form-group"><label>Soal (LaTeX OK)</label><textarea name="soal" class="form-control" rows="6" required></textarea></div><div class="form-group"><label>Opsi (JSON)</label><textarea name="opsi_json" class="form-control" rows="3">["A","B","C","D"]</textarea></div><div class="form-group"><label>Jawaban (JSON)</label><input name="jawaban_json" class="form-control" placeholder=""A" atau ["A","C"]"/></div><div class="form-group"><label>Penjelasan</label><textarea name="penjelasan" class="form-control" rows="2"></textarea></div><button class="btn btn-primary">Simpan</button></form>
+<div class="page-header">
+  <div>
+    <a href="/tutor/bank-soal" class="text-muted">&larr; Bank Soal</a>
+    <h1>Tambah Soal</h1>
+  </div>
+</div>
+
+<div class="card" style="background:#e0f2fe; color:#075985; border-left:4px solid #0284c7; padding:14px; margin-bottom:16px;">
+  <strong>&#128221; Panduan LaTeX Matematika:</strong>
+  <ul style="margin:6px 0 0; font-size:0.88rem;">
+    <li>Inline math: <code>$x^2 + 5x + 6 = 0$</code></li>
+    <li>Display math: <code>$$\int_0^\infty e^{-x}dx = 1$$</code></li>
+    <li>Pecahan: <code>\frac{a}{b}</code> | Akar: <code>\sqrt{x}</code> | Pangkat: <code>x^{10}</code> | Indeks: <code>a_{i,j}</code></li>
+    <li>Matriks: <code>\begin{bmatrix} a &amp; b \\\\ c &amp; d \end{bmatrix}</code></li>
+    <li>Himpunan: <code>\in \notin \subset \cup \cap \mathbb{R} \forall \exists</code></li>
+    <li>Cases: <code>\begin{cases} x &amp; \text{jika } x \geq 0 \\\\ -x &amp; \text{lainnya} \end{cases}</code></li>
+  </ul>
+</div>
+
+<form method="POST" action="/tutor/bank-soal" class="card" id="formSoal">
+  <div class="form-row">
+    <div class="form-group">
+      <label>Subtest *</label>
+      <select name="subtest" class="form-control" required>
+        <% subtests.forEach(function(st) { %>
+          <option value="<%= st %>" <%= subtest === st ? 'selected' : '' %>><%= st %></option>
+        <% }) %>
+        <option value="UMUM">UMUM / Lainnya</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Tipe Soal *</label>
+      <select name="tipe" class="form-control" id="tipe" onchange="onTipeChange()">
+        <option value="pg">Pilihan Ganda (1 jawaban)</option>
+        <option value="pg_kompleks">PG Kompleks (multi-jawaban)</option>
+        <option value="benar_salah">Benar / Salah</option>
+        <option value="menjodohkan">Menjodohkan</option>
+        <option value="isian">Isian Singkat</option>
+        <option value="esai">Esai / Uraian</option>
+        <option value="cloze">Cloze (Isi titik-titik)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Poin *</label>
+      <input type="number" name="poin" class="form-control" value="1" min="1" required/>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label>Pertanyaan / Soal *</label>
+    <textarea name="soal" class="form-control" rows="5" required placeholder="Contoh: Jika $x^2 + 5x + 6 = 0$, maka nilai $x$ adalah..."></textarea>
+    <div id="soalPreview" class="card" style="background:var(--bg); margin-top:6px; padding:10px; min-height:40px; font-size:0.95rem;"></div>
+  </div>
+
+  <!-- OPSI JAWABAN - PG / PG Kompleks -->
+  <div id="opsiBox" class="form-group">
+    <label>Opsi Jawaban</label>
+    <div id="opsiList">
+      <div class="opsi-row row-flex" style="margin-bottom:6px; align-items:center;">
+        <span class="badge">A</span>
+        <input type="text" class="form-control opsi-input" data-letter="A" placeholder="Opsi A"/>
+      </div>
+      <div class="opsi-row row-flex" style="margin-bottom:6px; align-items:center;">
+        <span class="badge">B</span>
+        <input type="text" class="form-control opsi-input" data-letter="B" placeholder="Opsi B"/>
+      </div>
+      <div class="opsi-row row-flex" style="margin-bottom:6px; align-items:center;">
+        <span class="badge">C</span>
+        <input type="text" class="form-control opsi-input" data-letter="C" placeholder="Opsi C"/>
+      </div>
+      <div class="opsi-row row-flex" style="margin-bottom:6px; align-items:center;">
+        <span class="badge">D</span>
+        <input type="text" class="form-control opsi-input" data-letter="D" placeholder="Opsi D"/>
+      </div>
+      <div class="opsi-row row-flex" style="margin-bottom:6px; align-items:center;">
+        <span class="badge">E</span>
+        <input type="text" class="form-control opsi-input" data-letter="E" placeholder="Opsi E (opsional)"/>
+      </div>
+    </div>
+    <button type="button" class="btn btn-sm btn-secondary" onclick="addOpsi()">+ Tambah Opsi</button>
+  </div>
+
+  <!-- JAWABAN BENAR -->
+  <div class="form-group" id="jawabanBox">
+    <label>Jawaban Benar *</label>
+    <div id="jawabanPG">
+      <select id="jawabanSelect" class="form-control">
+        <option value="A">A</option><option value="B">B</option><option value="C">C</option>
+        <option value="D">D</option><option value="E">E</option>
+      </select>
+    </div>
+    <div id="jawabanPGKompleks" style="display:none;">
+      <p class="text-muted" style="font-size:0.85rem;">Centang semua jawaban yang benar:</p>
+      <% ['A','B','C','D','E'].forEach(function(l) { %>
+        <label style="display:inline-block; margin-right:10px;"><input type="checkbox" class="ans-multi" value="<%= l %>"/> <%= l %></label>
+      <% }) %>
+    </div>
+    <div id="jawabanBS" style="display:none;">
+      <label><input type="radio" name="bs_ans" value="true"/> Benar</label>
+      <label style="margin-left:20px;"><input type="radio" name="bs_ans" value="false"/> Salah</label>
+    </div>
+    <div id="jawabanIsian" style="display:none;">
+      <input type="text" id="jawabanText" class="form-control" placeholder="Jawaban singkat"/>
+    </div>
+    <div id="jawabanEsai" style="display:none;">
+      <p class="text-muted" style="font-size:0.85rem;">Soal esai akan dinilai manual oleh tutor.</p>
+      <textarea id="jawabanRubrik" class="form-control" rows="3" placeholder="Rubrik/kriteria penilaian (opsional)"></textarea>
+    </div>
+  </div>
+
+  <!-- PEMBAHASAN -->
+  <div class="form-group">
+    <label>Pembahasan / Penjelasan Jawaban</label>
+    <textarea name="penjelasan" class="form-control" rows="4" placeholder="Akan ditampilkan setelah murid selesai mengerjakan. Gunakan LaTeX untuk matematika."></textarea>
+  </div>
+
+  <!-- Hidden fields -->
+  <input type="hidden" name="opsi_json" id="opsi_json"/>
+  <input type="hidden" name="jawaban_json" id="jawaban_json"/>
+
+  <button type="submit" class="btn btn-primary">Simpan Soal</button>
+</form>
+
+<!-- KaTeX for preview -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"/>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<script>
+function onTipeChange() {
+  var t = document.getElementById('tipe').value;
+  var opsiBox = document.getElementById('opsiBox');
+  // Reset display
+  ['jawabanPG','jawabanPGKompleks','jawabanBS','jawabanIsian','jawabanEsai'].forEach(function(id){
+    document.getElementById(id).style.display = 'none';
+  });
+  if (t==='pg') { opsiBox.style.display=''; document.getElementById('jawabanPG').style.display=''; }
+  else if (t==='pg_kompleks') { opsiBox.style.display=''; document.getElementById('jawabanPGKompleks').style.display=''; }
+  else if (t==='benar_salah') { opsiBox.style.display='none'; document.getElementById('jawabanBS').style.display=''; }
+  else if (t==='isian' || t==='cloze') { opsiBox.style.display='none'; document.getElementById('jawabanIsian').style.display=''; }
+  else if (t==='esai') { opsiBox.style.display='none'; document.getElementById('jawabanEsai').style.display=''; }
+  else if (t==='menjodohkan') { opsiBox.style.display=''; document.getElementById('jawabanIsian').style.display=''; }
+}
+onTipeChange();
+
+function addOpsi() {
+  var list = document.getElementById('opsiList');
+  var count = list.children.length;
+  var letter = String.fromCharCode(65 + count);
+  var row = document.createElement('div');
+  row.className = 'opsi-row row-flex';
+  row.style.cssText = 'margin-bottom:6px; align-items:center;';
+  row.innerHTML = '<span class="badge">' + letter + '</span>' +
+    '<input type="text" class="form-control opsi-input" data-letter="' + letter + '" placeholder="Opsi ' + letter + '"/>' +
+    '<button type="button" class="btn btn-sm btn-danger" onclick="this.parentNode.remove()">X</button>';
+  list.appendChild(row);
+  // Add to jawabanSelect
+  var sel = document.getElementById('jawabanSelect');
+  if (sel && !Array.from(sel.options).some(o => o.value === letter)) {
+    var opt = document.createElement('option');
+    opt.value = letter; opt.textContent = letter;
+    sel.appendChild(opt);
+  }
+}
+
+// Live preview LaTeX
+function renderPreview() {
+  var el = document.getElementById('soalPreview');
+  var text = document.querySelector('textarea[name="soal"]').value;
+  el.textContent = text || '(preview akan muncul di sini)';
+  if (window.renderMathInElement) {
+    renderMathInElement(el, {
+      delimiters: [
+        {left: '$$', right: '$$', display: true},
+        {left: '$', right: '$', display: false},
+        {left: '\\[', right: '\\]', display: true},
+        {left: '\\(', right: '\\)', display: false}
+      ]
+    });
+  }
+}
+document.querySelector('textarea[name="soal"]').addEventListener('input', renderPreview);
+setTimeout(renderPreview, 300);
+
+// Collect data before submit
+document.getElementById('formSoal').addEventListener('submit', function(e) {
+  var tipe = document.getElementById('tipe').value;
+  var opsi = [];
+  document.querySelectorAll('.opsi-input').forEach(function(inp) {
+    if (inp.value.trim()) opsi.push(inp.value);
+  });
+  document.getElementById('opsi_json').value = JSON.stringify(opsi);
+
+  var jawaban;
+  if (tipe === 'pg') jawaban = document.getElementById('jawabanSelect').value;
+  else if (tipe === 'pg_kompleks') {
+    jawaban = Array.from(document.querySelectorAll('.ans-multi:checked')).map(function(c){return c.value;});
+    if (jawaban.length === 0) { e.preventDefault(); alert('Pilih minimal 1 jawaban benar.'); return; }
+  }
+  else if (tipe === 'benar_salah') {
+    var bs = document.querySelector('input[name="bs_ans"]:checked');
+    if (!bs) { e.preventDefault(); alert('Pilih Benar atau Salah.'); return; }
+    jawaban = bs.value;
+  }
+  else if (tipe === 'isian' || tipe === 'cloze' || tipe === 'menjodohkan') {
+    jawaban = document.getElementById('jawabanText').value;
+    if (!jawaban) { e.preventDefault(); alert('Isi jawaban.'); return; }
+  }
+  else if (tipe === 'esai') {
+    jawaban = { tipe:'esai', rubrik: document.getElementById('jawabanRubrik').value };
+  }
+  document.getElementById('jawaban_json').value = JSON.stringify(jawaban);
+});
+</script>

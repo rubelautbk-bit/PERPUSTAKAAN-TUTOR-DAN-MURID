@@ -1,1 +1,70 @@
-<div class="page-header"><h1>Bank Soal</h1><div class="row-flex"><a href="/admin/bank-soal/export.xlsx<%= currentSubtest?'?subtest='+currentSubtest:''%>" class="btn btn-secondary">Export</a><a href="/admin/bank-soal/tambah?subtest=<%= currentSubtest %>" class="btn btn-primary">+ Tambah Soal</a></div></div><div class="row-flex mb-2"><% subtests.forEach(st=>{ %><a href="/admin/bank-soal?subtest=<%= st %>" class="btn btn-sm <%= currentSubtest===st?'btn-primary':'btn-secondary'%>"><%= st %></a><% }) %><a href="/admin/bank-soal" class="btn btn-sm btn-secondary">Semua</a></div><% if(currentSubtest) { %><form method="POST" action="/admin/bank-soal/bulk-poin" class="card" style="padding:10px;"><input type="hidden" name="subtest" value="<%= currentSubtest %>"/><div class="row-flex"><label>Ubah poin semua soal <%= currentSubtest %>:</label><input type="number" name="poin" class="form-control" style="width:80px" value="1" min="1"/><button class="btn btn-sm btn-primary">Set</button></div></form><% } %><table class="tbl"><thead><tr><th>#</th><th>Soal</th><th>Tipe</th><th>Subtest</th><th>Poin</th><th>Aksi</th></tr></thead><tbody><% soal.forEach((s,i)=>{ %><tr><td><%= i+1 %></td><td style="max-width:400px;"><%- s.soal.substring(0,100) %><%= s.soal.length>100?'...':''%></td><td><span class="badge"><%= s.tipe %></span></td><td><%= s.subtest %></td><td><%= s.poin %></td><td><form method="POST" action="/admin/bank-soal/<%= s.id %>?_method=DELETE" style="display:inline"><button class="btn btn-sm btn-danger">X</button></form></td></tr><% }) %></tbody></table>
+<div class="page-header">
+  <div><h1>Bank Soal</h1><p class="subtitle"><%= soal.length %> soal - Filter subtest untuk kategori spesifik</p></div>
+  <div class="row-flex">
+    <a href="/admin/bank-soal/template.xlsx" class="btn btn-secondary">&#128229; Template</a>
+    <a href="/admin/bank-soal/export.xlsx<%= currentSubtest?'?subtest='+currentSubtest:'' %>" class="btn btn-secondary">Export</a>
+    <a href="/admin/bank-soal/tambah?subtest=<%= currentSubtest %>" class="btn btn-primary">+ Tambah Soal</a>
+  </div>
+</div>
+
+<div class="card" style="padding:8px;">
+  <strong>Filter Subtest:</strong>
+  <div class="row-flex" style="margin-top:6px;">
+    <a href="/admin/bank-soal" class="btn btn-sm <%= !currentSubtest?'btn-primary':'btn-secondary' %>">Semua</a>
+    <% subtests.forEach(function(st) { %>
+      <a href="/admin/bank-soal?subtest=<%= st %>" class="btn btn-sm <%= currentSubtest===st?'btn-primary':'btn-secondary' %>"><%= st %></a>
+    <% }) %>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <h3>Import Soal (Excel/CSV)</h3>
+    <form method="POST" action="/admin/bank-soal/import" enctype="multipart/form-data">
+      <input type="file" name="file" accept=".xlsx,.xls,.csv" class="form-control" required/>
+      <button class="btn btn-primary mt-2">Import</button>
+    </form>
+    <p class="text-muted" style="font-size:0.85rem; margin-top:6px;">
+      Download template di atas untuk format yang benar.
+    </p>
+  </div>
+  <% if (currentSubtest) { %>
+  <div class="card">
+    <h3>Bulk Set Poin untuk <%= currentSubtest %></h3>
+    <form method="POST" action="/admin/bank-soal/bulk-poin" class="row-flex">
+      <input type="hidden" name="subtest" value="<%= currentSubtest %>"/>
+      <input type="number" name="poin" class="form-control" value="1" min="1" style="max-width:100px;" required/>
+      <button class="btn btn-primary">Set Poin Semua</button>
+    </form>
+    <p class="text-muted" style="font-size:0.85rem; margin-top:6px;">
+      Menerapkan poin yang sama untuk SEMUA soal di <%= currentSubtest %>.
+    </p>
+  </div>
+  <% } %>
+</div>
+
+<div class="card mt-3">
+  <h3>Daftar Soal</h3>
+  <table class="tbl">
+    <thead><tr><th>#</th><th>Soal</th><th>Tipe</th><th>Subtest</th><th>Poin</th><th>Aksi</th></tr></thead>
+    <tbody>
+      <% soal.forEach(function(s, i) { %>
+        <tr>
+          <td><%= i+1 %></td>
+          <td style="max-width:400px;"><%- s.soal.substring(0, 150) %><%= s.soal.length>150?'...':'' %></td>
+          <td><span class="badge"><%= s.tipe %></span></td>
+          <td><%= s.subtest %></td>
+          <td><%= s.poin %></td>
+          <td>
+            <form method="POST" action="/admin/bank-soal/<%= s.id %>?_method=DELETE" onsubmit="return confirm('Hapus soal?')">
+              <button class="btn btn-sm btn-danger">X</button>
+            </form>
+          </td>
+        </tr>
+      <% }) %>
+      <% if (soal.length === 0) { %>
+        <tr><td colspan="6" class="text-muted text-center">Belum ada soal. Tambah atau import dari Excel.</td></tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>

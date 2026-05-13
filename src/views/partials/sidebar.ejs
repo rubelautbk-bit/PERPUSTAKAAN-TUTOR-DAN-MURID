@@ -3,6 +3,7 @@
     <h6>Admin Panel</h6>
     <a href="/admin" class="<%= currentPath === '/admin' ? 'active' : '' %>">Dashboard</a>
     <a href="/admin/users" class="<%= currentPath.startsWith('/admin/users') ? 'active' : '' %>">Manajemen User</a>
+    <a href="/admin/kartu" class="<%= currentPath.startsWith('/admin/kartu') ? 'active' : '' %>">Kartu Anggota</a>
     <a href="/admin/buku" class="<%= currentPath.startsWith('/admin/buku') ? 'active' : '' %>">Manajemen Buku</a>
     <a href="/admin/kategori" class="<%= currentPath.startsWith('/admin/kategori') ? 'active' : '' %>">Kategori</a>
     <a href="/admin/kelas" class="<%= currentPath.startsWith('/admin/kelas') ? 'active' : '' %>">Kelas</a>
@@ -11,12 +12,13 @@
     <a href="/admin/bank-soal" class="<%= currentPath.startsWith('/admin/bank-soal') ? 'active' : '' %>">Bank Soal</a>
     <a href="/admin/ujian" class="<%= currentPath.startsWith('/admin/ujian') ? 'active' : '' %>">CBT / Ujian</a>
     <a href="/admin/usulan" class="<%= currentPath.startsWith('/admin/usulan') ? 'active' : '' %>">Usulan Buku</a>
+    <a href="/admin/wa" class="<%= currentPath.startsWith('/admin/wa') ? 'active' : '' %>">WhatsApp Gateway</a>
     <a href="/admin/pengumuman" class="<%= currentPath.startsWith('/admin/pengumuman') ? 'active' : '' %>">Pengumuman</a>
     <a href="/admin/galeri" class="<%= currentPath.startsWith('/admin/galeri') ? 'active' : '' %>">Galeri</a>
     <a href="/admin/kalender" class="<%= currentPath.startsWith('/admin/kalender') ? 'active' : '' %>">Kalender</a>
+    <a href="/admin/chat" class="<%= currentPath.startsWith('/admin/chat') ? 'active' : '' %>">Chat</a>
     <a href="/admin/laporan" class="<%= currentPath.startsWith('/admin/laporan') ? 'active' : '' %>">Laporan</a>
     <a href="/admin/rekap" class="<%= currentPath.startsWith('/admin/rekap') ? 'active' : '' %>">Rekap</a>
-    <a href="/admin/chat" class="<%= currentPath.startsWith('/admin/chat') ? 'active' : '' %>">Chat</a>
     <a href="/admin/settings" class="<%= currentPath.startsWith('/admin/settings') ? 'active' : '' %>">Pengaturan</a>
   <% } else if (user.role === 'tutor') { %>
     <h6>Tutor Panel</h6>
@@ -24,9 +26,12 @@
     <a href="/tutor/aktivasi" class="<%= currentPath.startsWith('/tutor/aktivasi') ? 'active' : '' %>">Aktivasi Anggota</a>
     <a href="/tutor/kelas" class="<%= currentPath.startsWith('/tutor/kelas') && !currentPath.includes('semua') ? 'active' : '' %>">Kelas Saya</a>
     <a href="/tutor/kelas/semua" class="<%= currentPath.includes('/kelas/semua') ? 'active' : '' %>">Semua Kelas</a>
+    <a href="/tutor/peminjaman" class="<%= currentPath.startsWith('/tutor/peminjaman') ? 'active' : '' %>">Pinjam Buku</a>
     <a href="/tutor/bank-soal" class="<%= currentPath.startsWith('/tutor/bank-soal') ? 'active' : '' %>">Bank Soal</a>
-    <a href="/tutor/ujian" class="<%= currentPath.startsWith('/tutor/ujian') ? 'active' : '' %>">CBT / Ujian</a>
+    <a href="/tutor/ujian" class="<%= currentPath.startsWith('/tutor/ujian') ? 'active' : '' %>">CBT / Ujian / Tugas</a>
     <a href="/tutor/progress" class="<%= currentPath.startsWith('/tutor/progress') ? 'active' : '' %>">Progress Murid</a>
+    <a href="/tutor/kartu" class="<%= currentPath.startsWith('/tutor/kartu') ? 'active' : '' %>">Kartu Anggota</a>
+    <a href="/tutor/wa" class="<%= currentPath.startsWith('/tutor/wa') ? 'active' : '' %>">WhatsApp Gateway</a>
     <a href="/tutor/forum" class="<%= currentPath.startsWith('/tutor/forum') ? 'active' : '' %>">Forum</a>
     <a href="/tutor/chat" class="<%= currentPath.startsWith('/tutor/chat') ? 'active' : '' %>">Chat</a>
     <a href="/tutor/rekap" class="<%= currentPath.startsWith('/tutor/rekap') ? 'active' : '' %>">Rekap</a>
@@ -38,7 +43,7 @@
     <a href="/murid/wishlist" class="<%= currentPath.startsWith('/murid/wishlist') ? 'active' : '' %>">Wishlist</a>
     <a href="/murid/kelas" class="<%= currentPath === '/murid/kelas' ? 'active' : '' %>">Kelas Saya</a>
     <a href="/murid/kelas/jelajahi" class="<%= currentPath.includes('/kelas/jelajahi') ? 'active' : '' %>">Jelajahi Kelas</a>
-    <a href="/murid/ujian" class="<%= currentPath.startsWith('/murid/ujian') ? 'active' : '' %>">Ujian / CBT</a>
+    <a href="/murid/ujian" class="<%= currentPath.startsWith('/murid/ujian') ? 'active' : '' %>">Ujian / Tugas</a>
     <a href="/murid/usulan" class="<%= currentPath.startsWith('/murid/usulan') ? 'active' : '' %>">Usulan Buku</a>
     <a href="/murid/progress" class="<%= currentPath.startsWith('/murid/progress') ? 'active' : '' %>">Progress</a>
     <a href="/murid/leaderboard" class="<%= currentPath.startsWith('/murid/leaderboard') ? 'active' : '' %>">Leaderboard</a>

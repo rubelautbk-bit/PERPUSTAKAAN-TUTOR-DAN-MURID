@@ -285,6 +285,21 @@ router.post('/bank-soal/import', upload.single('file'), (req, res) => {
   req.flash('success',`${ok} soal diimport.`); res.redirect('/admin/bank-soal');
 });
 
+// Template Excel bank soal
+router.get('/bank-soal/template.xlsx', (req, res) => {
+  const data = [
+    { subtest:'PU', soal:'Jika $x^2+5x+6=0$ maka $x$ adalah?', tipe:'pg', opsi_json:'["-2 dan -3","2 dan 3","1 dan 6","0 dan 5"]', jawaban_json:'"A"', poin:1, penjelasan:'Faktorkan: $(x+2)(x+3)=0$ maka $x=-2$ atau $x=-3$' },
+    { subtest:'PPU', soal:'Ibukota Indonesia adalah?', tipe:'pg', opsi_json:'["Jakarta","Bandung","Surabaya","Medan"]', jawaban_json:'"A"', poin:1, penjelasan:'Jakarta adalah ibukota Indonesia.' },
+    { subtest:'PBM', soal:'Apakah 2+2=4?', tipe:'benar_salah', opsi_json:'[]', jawaban_json:'"true"', poin:1, penjelasan:'Benar, operasi aritmatika dasar.' },
+  ];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), 'Bank Soal');
+  const buf = XLSX.write(wb, { type:'buffer', bookType:'xlsx' });
+  res.setHeader('Content-Type','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition','attachment; filename="template-bank-soal.xlsx"');
+  res.send(buf);
+});
+
 // ==================== CBT / UJIAN ====================
 router.get('/ujian', (req, res) => {
   const ujian = db.prepare('SELECT uj.*,u.name AS creator,(SELECT COUNT(*) FROM ujian_soal WHERE ujian_id=uj.id) jml_soal FROM ujian uj JOIN users u ON u.id=uj.created_by ORDER BY uj.created_at DESC').all();
@@ -378,6 +393,73 @@ router.post('/settings', (req, res) => {
 router.get('/chat', (req, res) => {
   const rooms = db.prepare('SELECT cr.*,(SELECT COUNT(*) FROM chat_member WHERE room_id=cr.id) members FROM chat_room cr ORDER BY cr.created_at DESC').all();
   res.render('admin/chat', { title: 'Chat', rooms });
+});
+
+// ==================== WHATSAPP GATEWAY (admin) ====================
+router.get('/wa', (req, res) => {
+  const kontak = db.prepare('SELECT * FROM kontak ORDER BY nama').all();
+  const wa_logs = db.prepare('SELECT wl.*,u.name AS sender FROM wa_log wl LEFT JOIN users u ON u.id=wl.sender_id ORDER BY wl.created_at DESC LIMIT 50').all();
+  const grups = db.prepare('SELECT DISTINCT grup FROM kontak WHERE grup IS NOT NULL').all().map(r=>r.grup);
+  res.render('admin/wa', { title: 'WhatsApp Gateway', kontak, wa_logs, grups });
+});
+router.post('/wa/kirim', async (req, res) => {
+  const { sendWA } = require('../utils/whatsapp');
+  const { phone, pesan, target_type, grup } = req.body;
+  let targets = [];
+  if (target_type === 'single') targets = [phone];
+  else if (target_type === 'grup' && grup) targets = db.prepare('SELECT phone FROM kontak WHERE grup=?').all(grup).map(k=>k.phone);
+  else if (target_type === 'all_kontak') targets = db.prepare('SELECT phone FROM kontak').all().map(k=>k.phone);
+  else if (target_type === 'all_murid') targets = db.prepare("SELECT phone FROM users WHERE role='murid' AND status='active' AND phone IS NOT NULL").all().map(k=>k.phone);
+  let sent=0, failed=0;
+  for (const t of targets) {
+    const r = await sendWA(t, pesan);
+    db.prepare('INSERT INTO wa_log (phone,pesan,status,response,sender_id) VALUES (?,?,?,?,?)')
+      .run(t, pesan, r.ok?'sent':'failed', JSON.stringify(r), req.session.user.id);
+    if (r.ok) sent++; else failed++;
+  }
+  req.flash('success', `Pesan terkirim: ${sent} berhasil, ${failed} gagal.`);
+  res.redirect('/admin/wa');
+});
+router.post('/wa/kontak', (req, res) => {
+  db.prepare('INSERT INTO kontak (nama,phone,grup,catatan,created_by) VALUES (?,?,?,?,?)')
+    .run(req.body.nama, req.body.phone, req.body.grup||null, req.body.catatan||null, req.session.user.id);
+  req.flash('success','Kontak ditambahkan.'); res.redirect('/admin/wa');
+});
+router.delete('/wa/kontak/:id', (req, res) => {
+  db.prepare('DELETE FROM kontak WHERE id=?').run(req.params.id);
+  req.flash('success','Dihapus.'); res.redirect('/admin/wa');
+});
+router.get('/wa/kontak/export.xlsx', (req, res) => {
+  const kontak = db.prepare('SELECT nama,phone,grup,catatan FROM kontak ORDER BY nama').all();
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(kontak), 'Kontak');
+  const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+  res.setHeader('Content-Type','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition','attachment; filename="kontak-rubela.xlsx"');
+  res.send(buf);
+});
+router.post('/wa/kontak/import', upload.single('file'), (req, res) => {
+  if (!req.file) { req.flash('error','File wajib.'); return res.redirect('/admin/wa'); }
+  try {
+    const wb = XLSX.readFile(req.file.path);
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+    let ok=0;
+    rows.forEach(r => {
+      const nama=r.nama||r.Nama, phone=r.phone||r.Phone||r.HP;
+      if (!nama||!phone) return;
+      db.prepare('INSERT INTO kontak (nama,phone,grup,catatan,created_by) VALUES (?,?,?,?,?)')
+        .run(nama, String(phone), r.grup||r.Grup||null, r.catatan||null, req.session.user.id);
+      ok++;
+    });
+    req.flash('success',`${ok} kontak diimport.`);
+  } catch(e) { req.flash('error','Gagal: '+e.message); }
+  res.redirect('/admin/wa');
+});
+
+// ==================== KARTU ANGGOTA (admin) ====================
+router.get('/kartu', (req, res) => {
+  const users = db.prepare("SELECT id,nomor_anggota,name,email,role,status FROM users WHERE status='active' ORDER BY role, name").all();
+  res.render('admin/kartu', { title: 'Kartu Anggota', users });
 });
 
 // ==================== REKAP ====================
