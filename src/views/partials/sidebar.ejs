@@ -1,36 +1,53 @@
 <aside class="sidebar">
   <% if (user.role === 'admin') { %>
-    <h6><%= t('sidebar.adminPanel') %></h6>
-    <a href="/admin" class="<%= currentPath === '/admin' ? 'active' : '' %>"><%= t('sidebar.dashboard') %></a>
-    <a href="/admin/users" class="<%= currentPath.startsWith('/admin/users') ? 'active' : '' %>"><%= t('sidebar.userMgmt') %></a>
-    <a href="/admin/buku" class="<%= currentPath.startsWith('/admin/buku') ? 'active' : '' %>"><%= t('sidebar.bookMgmt') %></a>
-    <a href="/admin/kategori" class="<%= currentPath.startsWith('/admin/kategori') ? 'active' : '' %>"><%= t('sidebar.categories') %></a>
-    <a href="/admin/peminjaman" class="<%= currentPath.startsWith('/admin/peminjaman') ? 'active' : '' %>"><%= t('sidebar.borrows') %></a>
-    <a href="/admin/denda" class="<%= currentPath.startsWith('/admin/denda') ? 'active' : '' %>"><%= t('sidebar.fines') %></a>
-    <a href="/admin/pengumuman" class="<%= currentPath.startsWith('/admin/pengumuman') ? 'active' : '' %>"><%= t('sidebar.announcements') %></a>
-    <a href="/admin/laporan" class="<%= currentPath.startsWith('/admin/laporan') ? 'active' : '' %>"><%= t('sidebar.reports') %></a>
-    <a href="/admin/settings" class="<%= currentPath.startsWith('/admin/settings') ? 'active' : '' %>"><%= t('sidebar.settings') %></a>
+    <h6>Admin Panel</h6>
+    <a href="/admin" class="<%= currentPath === '/admin' ? 'active' : '' %>">Dashboard</a>
+    <a href="/admin/users" class="<%= currentPath.startsWith('/admin/users') ? 'active' : '' %>">Manajemen User</a>
+    <a href="/admin/buku" class="<%= currentPath.startsWith('/admin/buku') ? 'active' : '' %>">Manajemen Buku</a>
+    <a href="/admin/kategori" class="<%= currentPath.startsWith('/admin/kategori') ? 'active' : '' %>">Kategori</a>
+    <a href="/admin/kelas" class="<%= currentPath.startsWith('/admin/kelas') ? 'active' : '' %>">Kelas</a>
+    <a href="/admin/peminjaman" class="<%= currentPath.startsWith('/admin/peminjaman') ? 'active' : '' %>">Peminjaman</a>
+    <a href="/admin/denda" class="<%= currentPath.startsWith('/admin/denda') ? 'active' : '' %>">Denda</a>
+    <a href="/admin/bank-soal" class="<%= currentPath.startsWith('/admin/bank-soal') ? 'active' : '' %>">Bank Soal</a>
+    <a href="/admin/ujian" class="<%= currentPath.startsWith('/admin/ujian') ? 'active' : '' %>">CBT / Ujian</a>
+    <a href="/admin/usulan" class="<%= currentPath.startsWith('/admin/usulan') ? 'active' : '' %>">Usulan Buku</a>
+    <a href="/admin/pengumuman" class="<%= currentPath.startsWith('/admin/pengumuman') ? 'active' : '' %>">Pengumuman</a>
+    <a href="/admin/galeri" class="<%= currentPath.startsWith('/admin/galeri') ? 'active' : '' %>">Galeri</a>
+    <a href="/admin/kalender" class="<%= currentPath.startsWith('/admin/kalender') ? 'active' : '' %>">Kalender</a>
+    <a href="/admin/laporan" class="<%= currentPath.startsWith('/admin/laporan') ? 'active' : '' %>">Laporan</a>
+    <a href="/admin/rekap" class="<%= currentPath.startsWith('/admin/rekap') ? 'active' : '' %>">Rekap</a>
+    <a href="/admin/chat" class="<%= currentPath.startsWith('/admin/chat') ? 'active' : '' %>">Chat</a>
+    <a href="/admin/settings" class="<%= currentPath.startsWith('/admin/settings') ? 'active' : '' %>">Pengaturan</a>
   <% } else if (user.role === 'tutor') { %>
-    <h6><%= t('sidebar.tutorPanel') %></h6>
-    <a href="/tutor" class="<%= currentPath === '/tutor' ? 'active' : '' %>"><%= t('sidebar.dashboard') %></a>
-    <a href="/tutor/kelas" class="<%= currentPath.startsWith('/tutor/kelas') ? 'active' : '' %>"><%= t('sidebar.classes') %></a>
-    <a href="/tutor/murid" class="<%= currentPath.startsWith('/tutor/murid') ? 'active' : '' %>"><%= t('sidebar.students') %></a>
-    <a href="/tutor/materi" class="<%= currentPath.startsWith('/tutor/materi') ? 'active' : '' %>"><%= t('sidebar.materials') %></a>
-    <a href="/tutor/rekomendasi" class="<%= currentPath.startsWith('/tutor/rekomendasi') ? 'active' : '' %>"><%= t('sidebar.recommendations') %></a>
-    <a href="/tutor/quiz" class="<%= currentPath.startsWith('/tutor/quiz') ? 'active' : '' %>"><%= t('sidebar.quizzes') %></a>
-    <a href="/tutor/forum" class="<%= currentPath.startsWith('/tutor/forum') ? 'active' : '' %>"><%= t('sidebar.forum') %></a>
-    <a href="/tutor/progress" class="<%= currentPath.startsWith('/tutor/progress') ? 'active' : '' %>"><%= t('sidebar.studentProgress') %></a>
+    <h6>Tutor Panel</h6>
+    <a href="/tutor" class="<%= currentPath === '/tutor' ? 'active' : '' %>">Dashboard</a>
+    <a href="/tutor/aktivasi" class="<%= currentPath.startsWith('/tutor/aktivasi') ? 'active' : '' %>">Aktivasi Anggota</a>
+    <a href="/tutor/kelas" class="<%= currentPath.startsWith('/tutor/kelas') && !currentPath.includes('semua') ? 'active' : '' %>">Kelas Saya</a>
+    <a href="/tutor/kelas/semua" class="<%= currentPath.includes('/kelas/semua') ? 'active' : '' %>">Semua Kelas</a>
+    <a href="/tutor/bank-soal" class="<%= currentPath.startsWith('/tutor/bank-soal') ? 'active' : '' %>">Bank Soal</a>
+    <a href="/tutor/ujian" class="<%= currentPath.startsWith('/tutor/ujian') ? 'active' : '' %>">CBT / Ujian</a>
+    <a href="/tutor/progress" class="<%= currentPath.startsWith('/tutor/progress') ? 'active' : '' %>">Progress Murid</a>
+    <a href="/tutor/forum" class="<%= currentPath.startsWith('/tutor/forum') ? 'active' : '' %>">Forum</a>
+    <a href="/tutor/chat" class="<%= currentPath.startsWith('/tutor/chat') ? 'active' : '' %>">Chat</a>
+    <a href="/tutor/rekap" class="<%= currentPath.startsWith('/tutor/rekap') ? 'active' : '' %>">Rekap</a>
   <% } else if (user.role === 'murid') { %>
-    <h6><%= t('sidebar.studentMenu') %></h6>
-    <a href="/murid" class="<%= currentPath === '/murid' ? 'active' : '' %>"><%= t('sidebar.dashboard') %></a>
-    <a href="/katalog" class="<%= currentPath.startsWith('/katalog') ? 'active' : '' %>"><%= t('sidebar.searchBook') %></a>
-    <a href="/murid/buku-saya" class="<%= currentPath.startsWith('/murid/buku-saya') ? 'active' : '' %>"><%= t('sidebar.myBooks') %></a>
-    <a href="/murid/wishlist" class="<%= currentPath.startsWith('/murid/wishlist') ? 'active' : '' %>"><%= t('sidebar.wishlist') %></a>
-    <a href="/murid/progress" class="<%= currentPath.startsWith('/murid/progress') ? 'active' : '' %>"><%= t('sidebar.progress') %></a>
-    <a href="/murid/tugas" class="<%= currentPath.startsWith('/murid/tugas') ? 'active' : '' %>"><%= t('sidebar.tasks') %></a>
-    <a href="/murid/leaderboard" class="<%= currentPath.startsWith('/murid/leaderboard') ? 'active' : '' %>">&#127942; <%= t('sidebar.leaderboard') %></a>
-    <a href="/murid/forum" class="<%= currentPath.startsWith('/murid/forum') ? 'active' : '' %>"><%= t('sidebar.forum') %></a>
-    <a href="/murid/notifikasi" class="<%= currentPath.startsWith('/murid/notifikasi') ? 'active' : '' %>"><%= t('sidebar.notifications') %></a>
-    <a href="/murid/profile" class="<%= currentPath.startsWith('/murid/profile') ? 'active' : '' %>"><%= t('sidebar.profile') %></a>
+    <h6>Menu Murid</h6>
+    <a href="/murid" class="<%= currentPath === '/murid' ? 'active' : '' %>">Dashboard</a>
+    <a href="/katalog" class="<%= currentPath.startsWith('/katalog') ? 'active' : '' %>">Cari Buku</a>
+    <a href="/murid/buku-saya" class="<%= currentPath.startsWith('/murid/buku-saya') ? 'active' : '' %>">Buku Saya</a>
+    <a href="/murid/wishlist" class="<%= currentPath.startsWith('/murid/wishlist') ? 'active' : '' %>">Wishlist</a>
+    <a href="/murid/kelas" class="<%= currentPath === '/murid/kelas' ? 'active' : '' %>">Kelas Saya</a>
+    <a href="/murid/kelas/jelajahi" class="<%= currentPath.includes('/kelas/jelajahi') ? 'active' : '' %>">Jelajahi Kelas</a>
+    <a href="/murid/ujian" class="<%= currentPath.startsWith('/murid/ujian') ? 'active' : '' %>">Ujian / CBT</a>
+    <a href="/murid/usulan" class="<%= currentPath.startsWith('/murid/usulan') ? 'active' : '' %>">Usulan Buku</a>
+    <a href="/murid/progress" class="<%= currentPath.startsWith('/murid/progress') ? 'active' : '' %>">Progress</a>
+    <a href="/murid/leaderboard" class="<%= currentPath.startsWith('/murid/leaderboard') ? 'active' : '' %>">Leaderboard</a>
+    <a href="/murid/forum" class="<%= currentPath.startsWith('/murid/forum') ? 'active' : '' %>">Forum</a>
+    <a href="/murid/chat" class="<%= currentPath.startsWith('/murid/chat') ? 'active' : '' %>">Chat</a>
+    <a href="/murid/kalender" class="<%= currentPath.startsWith('/murid/kalender') ? 'active' : '' %>">Kalender</a>
+    <a href="/murid/riwayat" class="<%= currentPath.startsWith('/murid/riwayat') ? 'active' : '' %>">Riwayat</a>
+    <a href="/murid/rekap" class="<%= currentPath.startsWith('/murid/rekap') ? 'active' : '' %>">Rekap</a>
+    <a href="/murid/notifikasi" class="<%= currentPath.startsWith('/murid/notifikasi') ? 'active' : '' %>">Notifikasi</a>
+    <a href="/murid/profile" class="<%= currentPath.startsWith('/murid/profile') ? 'active' : '' %>">Profile</a>
   <% } %>
 </aside>
