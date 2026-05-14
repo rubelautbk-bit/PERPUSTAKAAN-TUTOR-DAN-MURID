@@ -157,7 +157,23 @@ router.get('/ujian/:id/kerjakan', (req, res) => {
   const existing = db.prepare('SELECT * FROM ujian_peserta WHERE ujian_id=? AND user_id=?').get(uj.id, uid);
   if (existing && existing.status === 'selesai') { req.flash('error','Anda sudah mengerjakan ujian ini.'); return res.redirect('/murid/ujian'); }
   // Mark as mengerjakan
-  if (!existing) { db.prepare("INSERT INTO ujian_peserta (ujian_id,user_id,mulai_at,status,ip_address,browser) VALUES (?,?,CURRENT_TIMESTAMP,'mengerjakan',?,?)").run(uj.id,uid,req.ip,req.get('User-Agent')); }
+  if (!existing) {
+    db.prepare("INSERT INTO ujian_peserta (ujian_id,user_id,mulai_at,status,ip_address,browser) VALUES (?,?,CURRENT_TIMESTAMP,'mengerjakan',?,?)").run(uj.id,uid,req.ip,req.get('User-Agent'));
+    try {
+      const io = req.app.get('io');
+      if (io) {
+        io.to('ujian-' + uj.id).emit('livescore-update', {
+          ujian_id: uj.id,
+          user_id: uid,
+          name: req.session.user.name,
+          nilai: null,
+          benar: 0, salah: 0, kosong: 0,
+          status: 'mengerjakan',
+          violation_count: 0,
+        });
+      }
+    } catch(e) { console.error('[mulai emit]', e); }
+  }
   // Get soal
   let soalList = db.prepare('SELECT us.id AS us_id,bs.* FROM ujian_soal us JOIN bank_soal bs ON bs.id=us.bank_soal_id WHERE us.ujian_id=? ORDER BY us.urutan').all(uj.id);
   if (uj.acak_soal) soalList = soalList.sort(()=>Math.random()-0.5);
@@ -182,12 +198,50 @@ router.post('/ujian/:id/submit', express.json(), (req, res) => {
     .run(nilai,benar,salah,kosong,JSON.stringify(jawaban),uj.id,uid);
   if (nilai>=80) { gami.addPoin(uid,20); } gami.checkAchievements(uid);
   logAktivitas(uid,'ujian_selesai',`Menyelesaikan ${uj.judul}: ${nilai}%`,'ujian',uj.id);
+
+  // Livescore real-time: emit ke room tutor yang sedang melihat halaman hasil
+  try {
+    const io = req.app.get('io');
+    if (io) {
+      const peserta = db.prepare('SELECT up.*,u.name FROM ujian_peserta up JOIN users u ON u.id=up.user_id WHERE up.ujian_id=? AND up.user_id=?').get(uj.id, uid);
+      io.to('ujian-' + uj.id).emit('livescore-update', {
+        ujian_id: uj.id,
+        user_id: uid,
+        name: peserta?.name || req.session.user.name,
+        nilai,
+        benar,
+        salah,
+        kosong,
+        status: 'selesai',
+        violation_count: peserta?.violation_count || 0,
+        selesai_at: new Date().toISOString(),
+      });
+    }
+  } catch (e) { console.error('[livescore emit]', e); }
+
   res.json({ok:true, nilai, benar, salah, kosong});
 });
 // Anti-cheat violation report
 router.post('/ujian/:id/violation', express.json(), (req, res) => {
   const uid = req.session.user.id;
   db.prepare('UPDATE ujian_peserta SET violation_count=violation_count+1 WHERE ujian_id=? AND user_id=?').run(req.params.id, uid);
+  try {
+    const io = req.app.get('io');
+    if (io) {
+      const p = db.prepare('SELECT up.*,u.name FROM ujian_peserta up JOIN users u ON u.id=up.user_id WHERE up.ujian_id=? AND up.user_id=?').get(req.params.id, uid);
+      if (p) io.to('ujian-' + req.params.id).emit('livescore-update', {
+        ujian_id: +req.params.id,
+        user_id: uid,
+        name: p.name,
+        nilai: p.nilai,
+        benar: p.benar,
+        salah: p.salah,
+        kosong: p.kosong,
+        status: p.status,
+        violation_count: p.violation_count,
+      });
+    }
+  } catch(e) { console.error('[violation emit]', e); }
   res.json({ok:true});
 });
 

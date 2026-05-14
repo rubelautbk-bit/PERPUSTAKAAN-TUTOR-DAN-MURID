@@ -12,10 +12,14 @@ const io = new Server(server);
 // Make io accessible in routes
 app.set('io', io);
 
-// Socket.IO for chat
+// Socket.IO for chat + livescore ujian
 io.on('connection', (socket) => {
   socket.on('join-room', (roomId) => {
     socket.join('room-' + roomId);
+  });
+  // Tutor live monitoring ujian: room name "ujian-{id}"
+  socket.on('join-ujian', (ujianId) => {
+    socket.join('ujian-' + ujianId);
   });
   socket.on('chat-message', (data) => {
     // data: { roomId, userId, userName, pesan }

@@ -1,6 +1,10 @@
 <div class="page-header">
   <div><h1>Bank Soal</h1><p class="subtitle"><%= soal.length %> soal tersedia</p></div>
-  <a href="/tutor/bank-soal/tambah?subtest=<%= currentSubtest %>" class="btn btn-primary">+ Tambah Soal</a>
+  <div class="row-flex">
+    <a href="/tutor/bank-soal/template.xlsx" class="btn btn-secondary">&#128229; Template</a>
+    <a href="/tutor/bank-soal/export.xlsx<%= currentSubtest?'?subtest='+currentSubtest:'' %>" class="btn btn-secondary">Export</a>
+    <a href="/tutor/bank-soal/tambah?subtest=<%= currentSubtest %>" class="btn btn-primary">+ Tambah Soal</a>
+  </div>
 </div>
 
 <div class="card" style="padding:8px;">
@@ -14,6 +18,18 @@
 </div>
 
 <div class="card">
+  <h3>Import Soal (Excel / CSV)</h3>
+  <form method="POST" action="/tutor/bank-soal/import" enctype="multipart/form-data" class="row-flex" style="gap:8px;align-items:center;">
+    <input type="file" name="file" accept=".xlsx,.xls,.csv" class="form-control" required style="max-width:320px;"/>
+    <button class="btn btn-primary">Import</button>
+  </form>
+  <p class="text-muted" style="font-size:0.85rem;margin-top:6px;">
+    Kolom: <code>subtest, soal, tipe, opsi_json, jawaban_json, poin, penjelasan</code>. Download template untuk contoh format.
+  </p>
+</div>
+
+<div class="card mt-3">
+  <h3>Daftar Soal</h3>
   <table class="tbl">
     <thead><tr><th>#</th><th>Soal</th><th>Tipe</th><th>Subtest</th><th>Poin</th><th></th></tr></thead>
     <tbody>

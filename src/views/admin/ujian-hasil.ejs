@@ -1,1 +1,121 @@
-<div class="page-header"><h1>Hasil: <%= uj?uj.judul:'-' %></h1></div><table class="tbl"><thead><tr><th>Nama</th><th>Nilai</th><th>Benar</th><th>Salah</th><th>Kosong</th><th>Status</th><th>Pelanggaran</th></tr></thead><tbody><% peserta.forEach(p=>{ %><tr><td><%= p.name %></td><td><strong><%= p.nilai %></strong></td><td><%= p.benar %></td><td><%= p.salah %></td><td><%= p.kosong %></td><td><span class="badge"><%= p.status %></span></td><td><%= p.violation_count %></td></tr><% }) %></tbody></table>
+<div class="page-header">
+  <div>
+    <h1>Hasil: <%= uj ? uj.judul : '-' %></h1>
+    <p class="subtitle">
+      Livescore real-time
+      <span id="liveDot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#dc2626;margin-left:6px;vertical-align:middle;"></span>
+      <span id="liveStatus" class="text-muted" style="font-size:0.85rem;">connecting...</span>
+      &middot; <span id="liveCount"><%= peserta.length %></span> peserta
+    </p>
+  </div>
+</div>
+
+<div class="card">
+  <table class="tbl" id="livescoreTable">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Nama</th>
+        <th>Nilai</th>
+        <th>Benar</th>
+        <th>Salah</th>
+        <th>Kosong</th>
+        <th>Status</th>
+        <th>Pelanggaran</th>
+      </tr>
+    </thead>
+    <tbody id="livescoreBody">
+      <% peserta.forEach(function(p, i) { %>
+        <tr data-user-id="<%= p.user_id %>">
+          <td class="col-rank"><%= i + 1 %></td>
+          <td><%= p.name %></td>
+          <td class="col-nilai"><strong><%= p.nilai != null ? p.nilai : '-' %></strong></td>
+          <td class="col-benar"><%= p.benar %></td>
+          <td class="col-salah"><%= p.salah %></td>
+          <td class="col-kosong"><%= p.kosong %></td>
+          <td class="col-status"><span class="badge"><%= p.status %></span></td>
+          <td class="col-violation"><%= p.violation_count %></td>
+        </tr>
+      <% }) %>
+      <% if (peserta.length === 0) { %>
+        <tr id="emptyRow"><td colspan="8" class="text-muted text-center">Belum ada peserta. Tabel akan terupdate otomatis saat murid mulai/mensubmit ujian.</td></tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+(function() {
+  var ujianId = <%= uj ? uj.id : 0 %>;
+  if (!ujianId) return;
+  var socket = io();
+  var dot = document.getElementById('liveDot');
+  var statusEl = document.getElementById('liveStatus');
+
+  socket.on('connect', function() {
+    socket.emit('join-ujian', ujianId);
+    if (dot) dot.style.background = '#16a34a';
+    if (statusEl) statusEl.textContent = 'live';
+  });
+  socket.on('disconnect', function() {
+    if (dot) dot.style.background = '#dc2626';
+    if (statusEl) statusEl.textContent = 'reconnecting...';
+  });
+
+  function rerank() {
+    var body = document.getElementById('livescoreBody');
+    if (!body) return;
+    var rows = Array.prototype.slice.call(body.querySelectorAll('tr[data-user-id]'));
+    rows.sort(function(a, b) {
+      var na = parseFloat(a.querySelector('.col-nilai').textContent);
+      var nb = parseFloat(b.querySelector('.col-nilai').textContent);
+      if (isNaN(na)) na = -1;
+      if (isNaN(nb)) nb = -1;
+      return nb - na;
+    });
+    rows.forEach(function(r, i) {
+      r.querySelector('.col-rank').textContent = (i + 1);
+      body.appendChild(r);
+    });
+    var countEl = document.getElementById('liveCount');
+    if (countEl) countEl.textContent = rows.length;
+  }
+
+  socket.on('livescore-update', function(d) {
+    if (+d.ujian_id !== +ujianId) return;
+    var body = document.getElementById('livescoreBody');
+    var empty = document.getElementById('emptyRow');
+    if (empty) empty.remove();
+
+    var row = body.querySelector('tr[data-user-id="' + d.user_id + '"]');
+    if (!row) {
+      row = document.createElement('tr');
+      row.setAttribute('data-user-id', d.user_id);
+      row.innerHTML = '<td class="col-rank"></td><td class="col-name"></td>'
+        + '<td class="col-nilai"><strong>-</strong></td>'
+        + '<td class="col-benar">0</td><td class="col-salah">0</td>'
+        + '<td class="col-kosong">0</td><td class="col-status"></td>'
+        + '<td class="col-violation">0</td>';
+      body.appendChild(row);
+    }
+    if (row.querySelector('.col-name')) {
+      row.querySelector('.col-name').textContent = d.name || '';
+    } else {
+      row.children[1].textContent = d.name || row.children[1].textContent;
+    }
+    row.querySelector('.col-nilai').innerHTML = '<strong>' + (d.nilai != null ? d.nilai : '-') + '</strong>';
+    row.querySelector('.col-benar').textContent = d.benar || 0;
+    row.querySelector('.col-salah').textContent = d.salah || 0;
+    row.querySelector('.col-kosong').textContent = d.kosong || 0;
+    row.querySelector('.col-status').innerHTML = '<span class="badge">' + (d.status || '-') + '</span>';
+    row.querySelector('.col-violation').textContent = d.violation_count || 0;
+
+    row.style.transition = 'background 1.2s ease';
+    row.style.background = '#fef3c7';
+    setTimeout(function() { row.style.background = ''; }, 1500);
+
+    rerank();
+  });
+})();
+</script>

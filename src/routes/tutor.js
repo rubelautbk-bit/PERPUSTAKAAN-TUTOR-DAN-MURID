@@ -150,6 +150,60 @@ router.post('/bank-soal', (req, res) => {
 });
 router.delete('/bank-soal/:id', (req, res) => { db.prepare('DELETE FROM bank_soal WHERE id=?').run(req.params.id); req.flash('success','Dihapus.'); res.redirect('/tutor/bank-soal'); });
 
+// Export bank soal (Excel)
+router.get('/bank-soal/export.xlsx', (req, res) => {
+  const { subtest } = req.query;
+  const soal = subtest
+    ? db.prepare('SELECT * FROM bank_soal WHERE subtest=?').all(subtest)
+    : db.prepare('SELECT * FROM bank_soal').all();
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(soal), 'Bank Soal');
+  const buf = XLSX.write(wb, { type:'buffer', bookType:'xlsx' });
+  res.setHeader('Content-Type','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition','attachment; filename="bank-soal.xlsx"');
+  res.send(buf);
+});
+
+// Template Excel bank soal (kolom: subtest, soal, tipe, opsi_json, jawaban_json, poin, penjelasan)
+router.get('/bank-soal/template.xlsx', (req, res) => {
+  const data = [
+    { subtest:'PU', soal:'Jika $x^2+5x+6=0$ maka $x$ adalah?', tipe:'pg', opsi_json:'["-2 dan -3","2 dan 3","1 dan 6","0 dan 5"]', jawaban_json:'"A"', poin:1, penjelasan:'Faktorkan: $(x+2)(x+3)=0$ maka $x=-2$ atau $x=-3$' },
+    { subtest:'PPU', soal:'Ibukota Indonesia adalah?', tipe:'pg', opsi_json:'["Jakarta","Bandung","Surabaya","Medan"]', jawaban_json:'"A"', poin:1, penjelasan:'Jakarta adalah ibukota Indonesia.' },
+    { subtest:'PBM', soal:'Apakah 2+2=4?', tipe:'benar_salah', opsi_json:'[]', jawaban_json:'"true"', poin:1, penjelasan:'Benar, operasi aritmatika dasar.' },
+  ];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), 'Bank Soal');
+  const buf = XLSX.write(wb, { type:'buffer', bookType:'xlsx' });
+  res.setHeader('Content-Type','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition','attachment; filename="template-bank-soal.xlsx"');
+  res.send(buf);
+});
+
+// Import bank soal (Excel .xlsx/.xls atau CSV .csv)
+// Kolom: subtest, soal, tipe, opsi_json, jawaban_json, poin, penjelasan
+router.post('/bank-soal/import', upload.single('file'), (req, res) => {
+  if (!req.file) { req.flash('error','File wajib.'); return res.redirect('/tutor/bank-soal'); }
+  try {
+    const { parseBankSoalFile } = require('../utils/bankSoalImport');
+    const { rows, errors } = parseBankSoalFile(req.file.path);
+    const stmt = db.prepare('INSERT INTO bank_soal (kelas_id,subtest,soal,tipe,opsi_json,jawaban_json,poin,penjelasan,created_by) VALUES (?,?,?,?,?,?,?,?,?)');
+    const insertMany = db.transaction((items) => {
+      let n = 0;
+      for (const r of items) {
+        stmt.run(r.kelas_id, r.subtest, r.soal, r.tipe, r.opsi_json, r.jawaban_json, r.poin, r.penjelasan, req.session.user.id);
+        n++;
+      }
+      return n;
+    });
+    const ok = insertMany(rows);
+    if (errors.length) req.flash('error', `${errors.length} baris diabaikan: ${errors.slice(0,3).join(' | ')}${errors.length>3?'...':''}`);
+    req.flash('success', `${ok} soal diimport.`);
+  } catch (e) {
+    req.flash('error', 'Gagal import: ' + e.message);
+  }
+  res.redirect('/tutor/bank-soal');
+});
+
 // Ujian
 router.get('/ujian', (req, res) => {
   const list = db.prepare('SELECT uj.*,(SELECT COUNT(*) FROM ujian_soal WHERE ujian_id=uj.id) jml_soal FROM ujian uj WHERE uj.created_by=? ORDER BY uj.created_at DESC').all(req.session.user.id);

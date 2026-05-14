@@ -277,12 +277,28 @@ router.get('/bank-soal/export.xlsx', (req, res) => {
   res.setHeader('Content-Disposition','attachment; filename="bank-soal.xlsx"');
   res.send(buf);
 });
-// Import bank soal
+// Import bank soal (Excel .xlsx/.xls atau CSV .csv)
 router.post('/bank-soal/import', upload.single('file'), (req, res) => {
   if (!req.file) { req.flash('error','File wajib.'); return res.redirect('/admin/bank-soal'); }
-  const wb = XLSX.readFile(req.file.path); const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-  let ok=0; rows.forEach(r => { if(!r.soal) return; db.prepare('INSERT INTO bank_soal (subtest,soal,tipe,opsi_json,jawaban_json,poin,penjelasan,created_by) VALUES (?,?,?,?,?,?,?,?)').run(r.subtest||'PU',r.soal,r.tipe||'pg',r.opsi_json||'[]',r.jawaban_json||'""',r.poin||1,r.penjelasan||null,req.session.user.id); ok++; });
-  req.flash('success',`${ok} soal diimport.`); res.redirect('/admin/bank-soal');
+  try {
+    const { parseBankSoalFile } = require('../utils/bankSoalImport');
+    const { rows, errors } = parseBankSoalFile(req.file.path);
+    const stmt = db.prepare('INSERT INTO bank_soal (kelas_id,subtest,soal,tipe,opsi_json,jawaban_json,poin,penjelasan,created_by) VALUES (?,?,?,?,?,?,?,?,?)');
+    const insertMany = db.transaction((items) => {
+      let n = 0;
+      for (const r of items) {
+        stmt.run(r.kelas_id, r.subtest, r.soal, r.tipe, r.opsi_json, r.jawaban_json, r.poin, r.penjelasan, req.session.user.id);
+        n++;
+      }
+      return n;
+    });
+    const ok = insertMany(rows);
+    if (errors.length) req.flash('error', `${errors.length} baris diabaikan: ${errors.slice(0,3).join(' | ')}${errors.length>3?'...':''}`);
+    req.flash('success', `${ok} soal diimport.`);
+  } catch (e) {
+    req.flash('error', 'Gagal import: ' + e.message);
+  }
+  res.redirect('/admin/bank-soal');
 });
 
 // Template Excel bank soal
