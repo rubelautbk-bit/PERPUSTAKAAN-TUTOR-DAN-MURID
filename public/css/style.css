@@ -290,6 +290,24 @@ table.tbl tr:hover td { background: var(--bg); }
 .book-info .meta { display: flex; justify-content: space-between; margin-top: auto; padding-top: 8px; font-size: 0.8rem; color: var(--muted); }
 .rating-star { color: var(--accent); }
 
+/* Small book cards for recommendations in kelas detail */
+.book-grid-sm {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 12px;
+}
+.book-grid-sm .book-card { border-radius: 8px; }
+.book-grid-sm .book-cover {
+  aspect-ratio: 3/4;
+  font-size: 0.78rem;
+  padding: 8px;
+  min-height: 80px;
+  max-height: 120px;
+}
+.book-grid-sm .book-info { padding: 8px; }
+.book-grid-sm .book-info .title { font-size: 0.82rem; }
+.book-grid-sm .book-info .author { font-size: 0.75rem; }
+
 /* ALERTS */
 .alert {
   padding: 12px 16px;

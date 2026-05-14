@@ -48,14 +48,14 @@
   <div class="card">
     <h3>Rekomendasi Buku dari Tutor (<%= rekomendasi.length %>)</h3>
     <% if (!rekomendasi.length) { %><p class="text-muted">Belum ada rekomendasi.</p><% } %>
-    <div class="grid-3">
+    <div class="book-grid-sm">
       <% rekomendasi.forEach(function(r) { %>
         <a href="/buku/<%= r.buku_id %>" class="book-card" style="text-decoration:none;">
           <div class="book-cover"><%= r.judul %></div>
           <div class="book-info">
             <div class="title"><%= r.judul %></div>
             <div class="author"><%= r.penulis || '' %></div>
-            <% if (r.catatan) { %><p style="font-size:0.82rem; margin:4px 0;">"<%= r.catatan %>"</p><% } %>
+            <% if (r.catatan) { %><p style="font-size:0.78rem; margin:4px 0; color:var(--muted);">"<%= r.catatan %>"</p><% } %>
           </div>
         </a>
       <% }) %>

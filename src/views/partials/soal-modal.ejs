@@ -1,0 +1,95 @@
+<!-- Reusable Modal: Lihat detail soal -->
+<div id="soalModal" class="soal-modal" style="display:none;">
+  <div class="soal-modal-backdrop" onclick="closeSoalModal()"></div>
+  <div class="soal-modal-box">
+    <div class="soal-modal-header">
+      <h3 style="margin:0;">Detail Soal <span id="soalModalId" class="text-muted" style="font-size:0.85rem;"></span></h3>
+      <button type="button" class="btn btn-sm btn-secondary" onclick="closeSoalModal()">&times;</button>
+    </div>
+    <div class="soal-modal-body" id="soalModalBody">
+      <p class="text-muted">Memuat...</p>
+    </div>
+  </div>
+</div>
+
+<style>
+  .soal-modal { position: fixed; inset: 0; z-index: 9999; }
+  .soal-modal-backdrop { position:absolute; inset:0; background:rgba(15,23,42,0.55); }
+  .soal-modal-box {
+    position:relative; max-width:680px; width:92%; max-height:86vh; margin:5vh auto; background:var(--card);
+    border-radius:12px; box-shadow:0 25px 50px rgba(0,0,0,0.25); display:flex; flex-direction:column; overflow:hidden;
+  }
+  .soal-modal-header { padding:14px 18px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; gap:10px; }
+  .soal-modal-body { padding:16px 18px; overflow-y:auto; }
+  .soal-opsi-row { padding:6px 10px; border:1px solid var(--border); border-radius:8px; margin-bottom:6px; background:var(--bg); }
+  .soal-opsi-row.correct { border-color:#10b981; background:#d1fae5; color:#065f46; font-weight:600; }
+</style>
+
+<!-- KaTeX (loaded once if not present) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" onerror="this.remove()"/>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" onerror="this.remove()"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onerror="this.remove()"></script>
+
+<script>
+function escapeHtml(s) {
+  if (s === undefined || s === null) return '';
+  return String(s).replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"})[c]; });
+}
+function letter(i) { return String.fromCharCode(65 + i); }
+function isCorrectOpsi(jawaban, idx) {
+  if (jawaban === undefined || jawaban === null) return false;
+  if (Array.isArray(jawaban)) return jawaban.map(String).includes(letter(idx));
+  return String(jawaban).toUpperCase() === letter(idx);
+}
+function renderJawaban(s) {
+  var j = s.jawaban;
+  if (s.tipe === 'pg') return '<strong>' + escapeHtml(j) + '</strong>';
+  if (s.tipe === 'pg_kompleks') return '<strong>' + (Array.isArray(j) ? j.map(escapeHtml).join(', ') : escapeHtml(j)) + '</strong>';
+  if (s.tipe === 'benar_salah') return '<strong>' + (String(j) === 'true' ? 'BENAR' : 'SALAH') + '</strong>';
+  if (s.tipe === 'esai') {
+    if (j && typeof j === 'object' && j.rubrik) return '<em>Rubrik:</em> ' + escapeHtml(j.rubrik);
+    return '<em>Dinilai manual oleh tutor.</em>';
+  }
+  return '<strong>' + escapeHtml(typeof j === 'object' ? JSON.stringify(j) : j) + '</strong>';
+}
+function lihatSoal(id, url) {
+  var modal = document.getElementById('soalModal');
+  var body = document.getElementById('soalModalBody');
+  var idLbl = document.getElementById('soalModalId');
+  idLbl.textContent = '#' + id;
+  body.innerHTML = '<p class="text-muted">Memuat...</p>';
+  modal.style.display = '';
+  fetch(url).then(function(r){ return r.json(); }).then(function(data){
+    if (!data.ok) { body.innerHTML = '<div class="alert alert-error">' + escapeHtml(data.error || 'Gagal memuat') + '</div>'; return; }
+    var s = data.soal;
+    var html = '';
+    html += '<div style="margin-bottom:10px;"><span class="badge">' + escapeHtml(s.tipe) + '</span> ';
+    if (s.subtest) html += '<span class="badge blue">' + escapeHtml(s.subtest) + '</span> ';
+    html += '<span class="badge warn">' + escapeHtml(s.poin) + ' poin</span></div>';
+    html += '<div class="card" style="background:var(--bg); padding:12px; margin-bottom:10px;"><strong>Pertanyaan:</strong><div id="soalQuestion" style="margin-top:6px;">' + escapeHtml(s.soal) + '</div></div>';
+    if (s.opsi && s.opsi.length) {
+      html += '<div style="margin-bottom:10px;"><strong>Opsi Jawaban:</strong>';
+      s.opsi.forEach(function(o, i){
+        var cls = isCorrectOpsi(s.jawaban, i) ? 'soal-opsi-row correct' : 'soal-opsi-row';
+        html += '<div class="' + cls + '"><strong>' + letter(i) + '.</strong> ' + escapeHtml(o) + (isCorrectOpsi(s.jawaban,i)?' &#10003;':'') + '</div>';
+      });
+      html += '</div>';
+    }
+    html += '<div class="card" style="background:#ecfdf5; color:#065f46; border-left:4px solid #10b981; padding:10px; margin-bottom:10px;"><strong>Kunci Jawaban:</strong> ' + renderJawaban(s) + '</div>';
+    if (s.penjelasan) {
+      html += '<div class="card" style="background:#eff6ff; color:#1e3a8a; border-left:4px solid #3b82f6; padding:10px; margin-bottom:10px;"><strong>Pembahasan:</strong><div id="soalPenjelasan" style="margin-top:4px;">' + escapeHtml(s.penjelasan) + '</div></div>';
+    }
+    if (s.creator) html += '<div class="text-muted" style="font-size:0.82rem;">Dibuat oleh: ' + escapeHtml(s.creator) + ' &middot; ' + escapeHtml(s.created_at || '') + '</div>';
+    body.innerHTML = html;
+    if (window.renderMathInElement) {
+      try {
+        ['soalQuestion','soalPenjelasan'].forEach(function(id){ var el = document.getElementById(id); if (el) renderMathInElement(el, { delimiters: [{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\[',right:'\\]',display:true},{left:'\\(',right:'\\)',display:false}] }); });
+      } catch(e){}
+    }
+  }).catch(function(e){ body.innerHTML = '<div class="alert alert-error">Gagal: ' + escapeHtml(e.message) + '</div>'; });
+}
+function closeSoalModal() {
+  document.getElementById('soalModal').style.display = 'none';
+}
+document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeSoalModal(); });
+</script>

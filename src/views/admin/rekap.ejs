@@ -1,1 +1,124 @@
-<div class="page-header"><h1>Rekapitulasi</h1></div><div class="stat-grid"><div class="stat"><div class="label">Total Peminjaman</div><div class="value"><%= totalPinjam %></div></div><div class="stat red"><div class="label">Total Denda</div><div class="value">Rp <%= totalDenda.toLocaleString() %></div></div><div class="stat blue"><div class="label">Total Ujian</div><div class="value"><%= totalUjian %></div></div><div class="stat accent"><div class="label">Total Soal</div><div class="value"><%= totalSoal %></div></div></div>
+<div class="page-header"><h1>Rekapitulasi</h1></div>
+
+<div class="stat-grid">
+  <div class="stat"><div class="label">Total Kelas</div><div class="value"><%= totalKelas %></div></div>
+  <div class="stat"><div class="label">Total Murid</div><div class="value"><%= totalMurid %></div></div>
+  <div class="stat"><div class="label">Total Tutor</div><div class="value"><%= totalTutor %></div></div>
+  <div class="stat blue"><div class="label">Total Ujian</div><div class="value"><%= totalUjian %></div></div>
+  <div class="stat accent"><div class="label">Total Soal</div><div class="value"><%= totalSoal %></div></div>
+  <div class="stat"><div class="label">Total Peminjaman</div><div class="value"><%= totalPinjam %></div></div>
+  <div class="stat red"><div class="label">Total Denda</div><div class="value">Rp <%= totalDenda.toLocaleString() %></div></div>
+</div>
+
+<!-- TABS -->
+<div class="card" style="padding:6px; display:flex; gap:4px; flex-wrap:wrap; margin-top:16px;">
+  <button class="btn btn-sm tab-btn active" data-tab="siswa">Rekap Siswa</button>
+  <button class="btn btn-sm tab-btn" data-tab="tutor">Rekap Tutor</button>
+  <button class="btn btn-sm tab-btn" data-tab="kelas">Rekap Kelas</button>
+</div>
+
+<!-- REKAP SISWA -->
+<div class="tab-content" data-tab="siswa">
+  <div class="card">
+    <h3>Rekap Semua Siswa - Hasil Ujian & Modul</h3>
+    <p class="text-muted" style="font-size:0.85rem; margin-bottom:10px;">Menampilkan total ujian selesai, rata-rata nilai, modul yang dibaca, dan progress bacaan.</p>
+    <div style="overflow-x:auto;">
+      <table class="tbl">
+        <thead><tr>
+          <th>Nama</th><th>Kelas</th><th>Ujian Selesai</th><th>Rata-rata Nilai</th><th>Modul Dibaca</th><th>Avg Progress</th>
+        </tr></thead>
+        <tbody>
+          <% rekapSiswa.forEach(function(s) { %>
+            <tr>
+              <td><strong><%= s.name %></strong><div class="text-muted" style="font-size:0.78rem;"><%= s.email %></div></td>
+              <td><%= s.kelas_nama || '-' %></td>
+              <td><%= s.total_ujian || 0 %></td>
+              <td><%= s.avg_nilai !== null ? s.avg_nilai : '-' %></td>
+              <td><%= s.modul_dibaca || 0 %></td>
+              <td><%= s.avg_progress !== null ? s.avg_progress + '%' : '-' %></td>
+            </tr>
+          <% }) %>
+          <% if (!rekapSiswa.length) { %>
+            <tr><td colspan="6" class="text-muted text-center">Belum ada data siswa.</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- REKAP TUTOR -->
+<div class="tab-content" data-tab="tutor" style="display:none;">
+  <div class="card">
+    <h3>Rekap Tutor - Pertemuan & Modul</h3>
+    <p class="text-muted" style="font-size:0.85rem; margin-bottom:10px;">Menampilkan berapa kali tutor membuat pertemuan dan berapa pertemuan yang sudah dilengkapi modul/bahan bacaan.</p>
+    <div style="overflow-x:auto;">
+      <table class="tbl">
+        <thead><tr>
+          <th>Nama Tutor</th><th>Kelas</th><th>Total Pertemuan</th><th>Pertemuan + Modul</th><th>Total Materi</th>
+        </tr></thead>
+        <tbody>
+          <% rekapTutor.forEach(function(t) { %>
+            <tr>
+              <td><strong><%= t.name %></strong><div class="text-muted" style="font-size:0.78rem;"><%= t.email %></div></td>
+              <td><%= t.jml_kelas %></td>
+              <td><%= t.jml_pertemuan %></td>
+              <td>
+                <span class="badge <%= t.pertemuan_dgn_modul >= t.jml_pertemuan && t.jml_pertemuan > 0 ? 'blue' : 'warn' %>">
+                  <%= t.pertemuan_dgn_modul %>/<%= t.jml_pertemuan %>
+                </span>
+              </td>
+              <td><%= t.jml_materi %></td>
+            </tr>
+          <% }) %>
+          <% if (!rekapTutor.length) { %>
+            <tr><td colspan="5" class="text-muted text-center">Belum ada tutor.</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- REKAP KELAS -->
+<div class="tab-content" data-tab="kelas" style="display:none;">
+  <div class="card">
+    <h3>Rekap Kelas</h3>
+    <div style="overflow-x:auto;">
+      <table class="tbl">
+        <thead><tr>
+          <th>Kelas</th><th>Kode</th><th>Tutor</th><th>Murid</th><th>Pertemuan</th><th>Materi</th><th>Ujian</th>
+        </tr></thead>
+        <tbody>
+          <% rekapKelas.forEach(function(k) { %>
+            <tr>
+              <td><strong><%= k.nama %></strong></td>
+              <td><code><%= k.kode %></code></td>
+              <td><%= k.tutor_name %></td>
+              <td><%= k.jml_murid %></td>
+              <td><%= k.jml_pertemuan %></td>
+              <td><%= k.jml_materi %></td>
+              <td><%= k.jml_ujian %></td>
+            </tr>
+          <% }) %>
+          <% if (!rekapKelas.length) { %>
+            <tr><td colspan="7" class="text-muted text-center">Belum ada kelas.</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.tab-btn').forEach(function(b) {
+  b.addEventListener('click', function() {
+    var tab = this.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(function(x){ x.classList.remove('active'); });
+    this.classList.add('active');
+    document.querySelectorAll('.tab-content').forEach(function(c) {
+      c.style.display = (c.dataset.tab === tab) ? '' : 'none';
+    });
+  });
+});
+</script>

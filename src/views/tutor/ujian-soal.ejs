@@ -1,1 +1,42 @@
-<div class="page-header"><h1>Soal: <%=uj.judul%></h1></div><div class="grid-2"><div class="card"><h3>Bank Soal</h3><form method="POST" action="/tutor/ujian/<%=uj.id%>/soal"><div style="max-height:400px;overflow-y:auto"><label style="display:block;padding:6px;border-bottom:1px solid var(--border);cursor:pointer"><input type="checkbox" onclick="this.closest('form').querySelectorAll('input[name=soal_ids]').forEach(c=>c.checked=this.checked)"/> <strong>Pilih Semua</strong></label><%bankSoal.forEach(s=>{%><label style="display:block;padding:6px;cursor:pointer"><input type="checkbox" name="soal_ids" value="<%=s.id%>"/> [<%=s.subtest%>] <%-s.soal.substring(0,60)%> (<%=s.poin%>pt)</label><%})%></div><button class="btn btn-primary mt-2">Tambahkan</button></form></div><div class="card"><h3>Terpilih (<%=soalTerpilih.length%>)</h3><%soalTerpilih.forEach((s,i)=>{%><div style="padding:4px 0;border-bottom:1px solid var(--border);font-size:0.9rem"><%=i+1%>. [<%=s.subtest%>] <%-s.soal.substring(0,50)%></div><%})%></div></div>
+<div class="page-header">
+  <div>
+    <a href="/tutor/ujian">&larr; Ujian</a>
+    <h1>Soal: <%= uj.judul %></h1>
+    <p class="subtitle">Status: <span class="badge <%= uj.status==='aktif'?'':'warn' %>"><%= uj.status %></span> &middot; <%= soalTerpilih.length %> soal terpilih</p>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <h3>Bank Soal (<%= bankSoal.length %>)</h3>
+    <form method="POST" action="/tutor/ujian/<%= uj.id %>/soal">
+      <div style="max-height:420px; overflow-y:auto; border:1px solid var(--border); border-radius:8px; padding:6px;">
+        <label style="display:block; padding:6px; border-bottom:1px solid var(--border); cursor:pointer;">
+          <input type="checkbox" onclick="this.closest('form').querySelectorAll('input[name=soal_ids]').forEach(c=>c.checked=this.checked)"/> <strong>Pilih Semua</strong>
+        </label>
+        <% bankSoal.forEach(function(s){ %>
+          <div style="padding:6px; border-bottom:1px solid var(--border); display:flex; gap:6px; align-items:start;">
+            <label style="flex:1; cursor:pointer;">
+              <input type="checkbox" name="soal_ids" value="<%= s.id %>"/> [<%= s.subtest %>] <%- s.soal.substring(0,60) %> <span class="text-muted" style="font-size:0.78rem;">(<%= s.poin %>pt)</span>
+            </label>
+            <button type="button" class="btn btn-sm btn-secondary" onclick="lihatSoal(<%= s.id %>, '/tutor/bank-soal/<%= s.id %>/json')">Lihat</button>
+          </div>
+        <% }) %>
+      </div>
+      <button class="btn btn-primary mt-2">Tambahkan</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h3>Terpilih (<%= soalTerpilih.length %>)</h3>
+    <% soalTerpilih.forEach(function(s,i){ %>
+      <div style="padding:4px 0; border-bottom:1px solid var(--border); font-size:0.9rem; display:flex; gap:6px; align-items:start;">
+        <div style="flex:1;"><%= i+1 %>. [<%= s.subtest %>] <%- s.soal.substring(0,50) %></div>
+        <button type="button" class="btn btn-sm btn-secondary" onclick="lihatSoal(<%= s.bank_soal_id %>, '/tutor/bank-soal/<%= s.bank_soal_id %>/json')">Lihat</button>
+      </div>
+    <% }) %>
+    <% if (!soalTerpilih.length) { %><p class="text-muted">Belum ada soal terpilih.</p><% } %>
+  </div>
+</div>
+
+<%- include('../partials/soal-modal') %>

@@ -1,1 +1,72 @@
-<div class="page-header"><h1>Kalender Kegiatan</h1></div><div class="grid-2"><div class="card"><h3>Tambah Event</h3><form method="POST" action="/admin/kalender"><div class="form-group"><label>Judul</label><input name="judul" class="form-control" required/></div><div class="form-group"><label>Tipe</label><select name="tipe" class="form-control"><option value="event">Event</option><option value="webinar">Webinar</option><option value="diskusi">Diskusi</option><option value="deadline">Deadline</option><option value="ujian">Ujian</option><option value="seminar">Seminar</option></select></div><div class="form-group"><label>Mulai</label><input type="datetime-local" name="tanggal_mulai" class="form-control" required/></div><div class="form-group"><label>Selesai</label><input type="datetime-local" name="tanggal_selesai" class="form-control"/></div><div class="form-group"><label>Deskripsi</label><textarea name="deskripsi" class="form-control"></textarea></div><button class="btn btn-primary">Simpan</button></form></div><div class="card"><h3>Jadwal</h3><% events.forEach(e=>{ %><div style="padding:8px 0;border-bottom:1px solid var(--border);"><span class="badge"><%= e.tipe %></span> <strong><%= e.judul %></strong><div class="text-muted" style="font-size:0.85rem;">Mulai: <%= e.tanggal_mulai %><% if(e.tanggal_selesai) { %> &mdash; Selesai: <%= e.tanggal_selesai %><% } %></div><% if(e.deskripsi) { %><div style="font-size:0.88rem;margin-top:4px;"><%= e.deskripsi %></div><% } %><form method="POST" action="/admin/kalender/<%= e.id %>?_method=DELETE" style="margin-top:4px;" onsubmit="return confirm('Hapus?')"><button class="btn btn-sm btn-danger">Hapus</button></form></div><% }) %></div></div>
+<%
+function fmtDt(s) {
+  if (!s) return '-';
+  // Convert "YYYY-MM-DD HH:MM[:SS]" or ISO to "DD MMM YYYY HH:MM"
+  var d = new Date(String(s).replace(' ', 'T'));
+  if (isNaN(d.getTime())) return s;
+  var b = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
+  var pad = function(n){ n=String(n); return n.length<2?'0'+n:n; };
+  return pad(d.getDate()) + ' ' + b[d.getMonth()] + ' ' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
+function durasi(a, b) {
+  if (!a || !b) return '';
+  var d1 = new Date(String(a).replace(' ','T')); var d2 = new Date(String(b).replace(' ','T'));
+  if (isNaN(d1) || isNaN(d2)) return '';
+  var diff = (d2 - d1) / 60000; if (diff <= 0) return '';
+  if (diff < 60) return Math.round(diff) + ' menit';
+  var h = Math.floor(diff/60), m = Math.round(diff%60);
+  if (diff < 60*24) return h + ' jam' + (m?(' '+m+' mnt'):'');
+  var dd = Math.floor(diff/(60*24));
+  return dd + ' hari' + (h%24?(' '+(h%24)+' jam'):'');
+}
+%>
+<div class="page-header"><h1>Kalender Kegiatan</h1></div>
+
+<div class="grid-2">
+  <div class="card">
+    <h3>Tambah Event</h3>
+    <form method="POST" action="/admin/kalender">
+      <div class="form-group"><label>Judul</label><input name="judul" class="form-control" required/></div>
+      <div class="form-group">
+        <label>Tipe</label>
+        <select name="tipe" class="form-control">
+          <option value="event">Event</option><option value="webinar">Webinar</option>
+          <option value="diskusi">Diskusi</option><option value="deadline">Deadline</option>
+          <option value="ujian">Ujian</option><option value="seminar">Seminar</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Mulai *</label><input type="datetime-local" name="tanggal_mulai" class="form-control" required/></div>
+        <div class="form-group"><label>Selesai *</label><input type="datetime-local" name="tanggal_selesai" class="form-control" required/></div>
+      </div>
+      <div class="form-group"><label>Deskripsi</label><textarea name="deskripsi" class="form-control" rows="2"></textarea></div>
+      <button class="btn btn-primary">Simpan</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h3>Jadwal (<%= events.length %>)</h3>
+    <% events.forEach(function(e){ %>
+      <div style="padding:10px 0; border-bottom:1px solid var(--border);">
+        <div class="row-flex" style="justify-content:space-between; align-items:start;">
+          <div style="flex:1;">
+            <span class="badge"><%= e.tipe %></span>
+            <strong><%= e.judul %></strong>
+            <div style="margin-top:6px; font-size:0.86rem;">
+              <span class="badge blue">&#9202; Mulai</span> <%= fmtDt(e.tanggal_mulai) %><br/>
+              <span class="badge red">&#9202; Selesai</span> <%= fmtDt(e.tanggal_selesai) %>
+              <% if (e.tanggal_selesai) { var d = durasi(e.tanggal_mulai, e.tanggal_selesai); if (d) { %>
+                <span class="text-muted">(<%= d %>)</span>
+              <% } } %>
+            </div>
+            <% if (e.deskripsi) { %><div style="font-size:0.88rem; margin-top:4px;"><%= e.deskripsi %></div><% } %>
+          </div>
+          <form method="POST" action="/admin/kalender/<%= e.id %>?_method=DELETE" onsubmit="return confirm('Hapus?')">
+            <button class="btn btn-sm btn-danger">Hapus</button>
+          </form>
+        </div>
+      </div>
+    <% }) %>
+    <% if (!events.length) { %><p class="text-muted">Belum ada event.</p><% } %>
+  </div>
+</div>

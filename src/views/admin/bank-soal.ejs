@@ -57,6 +57,7 @@
           <td><%= s.poin %></td>
           <td>
             <div class="row-flex" style="gap:4px;">
+              <button type="button" class="btn btn-sm btn-secondary" onclick="lihatSoal(<%= s.id %>, '/admin/bank-soal/<%= s.id %>/json')">Lihat</button>
               <a href="/admin/bank-soal/<%= s.id %>" class="btn btn-sm btn-secondary">Edit</a>
               <form method="POST" action="/admin/bank-soal/<%= s.id %>?_method=DELETE" onsubmit="return confirm('Hapus soal?')">
                 <button class="btn btn-sm btn-danger">X</button>
@@ -71,3 +72,6 @@
     </tbody>
   </table>
 </div>
+
+
+<%- include('../partials/soal-modal') %>

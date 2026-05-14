@@ -152,6 +152,14 @@ router.post('/bank-soal', (req, res) => {
   req.flash('success','Soal ditambahkan.'); res.redirect('/tutor/bank-soal?subtest='+(subtest||''));
 });
 router.delete('/bank-soal/:id', (req, res) => { db.prepare('DELETE FROM bank_soal WHERE id=?').run(req.params.id); req.flash('success','Dihapus.'); res.redirect('/tutor/bank-soal'); });
+// JSON detail soal (untuk modal "Lihat")
+router.get('/bank-soal/:id/json', (req, res) => {
+  const s = db.prepare('SELECT bs.*,u.name AS creator FROM bank_soal bs LEFT JOIN users u ON u.id=bs.created_by WHERE bs.id=?').get(req.params.id);
+  if (!s) return res.status(404).json({ ok:false, error:'Soal tidak ditemukan' });
+  let opsi = []; try { opsi = JSON.parse(s.opsi_json || '[]'); } catch(e){}
+  let jawaban; try { jawaban = JSON.parse(s.jawaban_json || '""'); } catch(e) { jawaban = s.jawaban_json; }
+  res.json({ ok:true, soal: { id:s.id, soal:s.soal, tipe:s.tipe, subtest:s.subtest, poin:s.poin, opsi, jawaban, penjelasan:s.penjelasan, creator:s.creator, created_at:s.created_at } });
+});
 // Detail & Edit soal
 router.get('/bank-soal/:id', (req, res) => {
   const s = db.prepare('SELECT * FROM bank_soal WHERE id=?').get(req.params.id);

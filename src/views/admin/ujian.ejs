@@ -1,1 +1,43 @@
-<div class="page-header"><h1>CBT / Ujian / Kuis</h1><a href="/admin/ujian/new" class="btn btn-primary">+ Buat Ujian</a></div><table class="tbl"><thead><tr><th>Judul</th><th>Tipe</th><th>Soal</th><th>Status</th><th>Aksi</th></tr></thead><tbody><% ujian.forEach(u=>{ %><tr><td><strong><%= u.judul %></strong><div class="text-muted" style="font-size:0.82rem;"><%= u.deskripsi||'-' %></div></td><td><span class="badge"><%= u.tipe %></span></td><td><%= u.jml_soal %></td><td><span class="badge <%= u.status==='aktif'?'':'warn'%>"><%= u.status %></span></td><td class="row-flex"><a href="/admin/ujian/<%= u.id %>/soal" class="btn btn-sm btn-secondary">Soal</a><a href="/admin/ujian/<%= u.id %>/hasil" class="btn btn-sm btn-secondary">Hasil</a><% if(u.status==='draft') { %><form method="POST" action="/admin/ujian/<%= u.id %>/publish"><button class="btn btn-sm btn-primary">Publish</button></form><% } %></td></tr><% }) %></tbody></table>
+<div class="page-header">
+  <div><h1>CBT / Ujian / Kuis</h1><p class="subtitle"><%= ujian.length %> ujian/tugas/kuis</p></div>
+  <a href="/admin/ujian/new" class="btn btn-primary">+ Buat Ujian</a>
+</div>
+
+<table class="tbl">
+  <thead><tr><th>Judul</th><th>Tipe</th><th>Soal</th><th>Status</th><th>Aksi</th></tr></thead>
+  <tbody>
+    <% ujian.forEach(function(u) { %>
+      <tr>
+        <td>
+          <strong><%= u.judul %></strong>
+          <div class="text-muted" style="font-size:0.82rem;"><%= u.deskripsi || '-' %></div>
+        </td>
+        <td><span class="badge"><%= u.tipe %></span></td>
+        <td><%= u.jml_soal %></td>
+        <td>
+          <span class="badge <%= u.status==='aktif' ? 'blue' : (u.status==='draft' ? 'warn' : '') %>"><%= u.status %></span>
+        </td>
+        <td>
+          <div class="row-flex" style="gap:4px; flex-wrap:wrap;">
+            <a href="/admin/ujian/<%= u.id %>/soal" class="btn btn-sm btn-secondary">Soal</a>
+            <a href="/admin/ujian/<%= u.id %>/hasil" class="btn btn-sm btn-secondary">Hasil</a>
+            <% if (u.status === 'draft') { %>
+              <form method="POST" action="/admin/ujian/<%= u.id %>/publish" style="display:inline;">
+                <button class="btn btn-sm btn-primary">Publish</button>
+              </form>
+            <% } else if (u.status === 'aktif') { %>
+              <form method="POST" action="/admin/ujian/<%= u.id %>/tunda" style="display:inline;">
+                <button class="btn btn-sm btn-secondary">Tunda</button>
+              </form>
+            <% } else if (u.status === 'selesai' || u.status === 'arsip') { %>
+              <span class="text-muted" style="font-size:0.82rem;">Selesai</span>
+            <% } %>
+          </div>
+        </td>
+      </tr>
+    <% }) %>
+    <% if (!ujian.length) { %>
+      <tr><td colspan="5" class="text-muted text-center">Belum ada ujian. Klik + Buat Ujian untuk memulai.</td></tr>
+    <% } %>
+  </tbody>
+</table>

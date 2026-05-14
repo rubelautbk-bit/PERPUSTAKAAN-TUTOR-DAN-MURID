@@ -211,23 +211,54 @@ var _kelasLain   = (typeof kelasLain   !== 'undefined' && kelasLain)   ? kelasLa
 <div class="tab-content" data-tab="kirim" style="display:none;">
   <div class="card">
     <h3>Kirim Modul &amp; Rekomendasi ke Kelas Lain</h3>
-    <p class="text-muted">Duplikasi semua modul dan rekomendasi buku ke kelas tujuan.</p>
+    <p class="text-muted">Pilih modul/materi yang ingin dikirim, lalu pilih kelas tujuan.</p>
     <% if (_kelasLain.length === 0) { %>
       <p class="text-muted">Tidak ada kelas lain yang aktif sebagai tujuan.</p>
     <% } else { %>
       <form method="POST" action="/admin/kelas/<%= kelas.id %>/kirim-materi">
-        <div style="max-height:300px; overflow-y:auto; border:1px solid var(--border); border-radius:8px; padding:10px;">
-          <% _kelasLain.forEach(function(k) { %>
-            <label style="display:block; padding:6px; cursor:pointer; border-bottom:1px solid var(--border);">
-              <input type="checkbox" name="target_ids" value="<%= k.id %>"/>
-              <strong><%= k.nama %></strong>
-              <span class="text-muted" style="font-size:0.85rem;"> - Tutor: <%= k.tutor_name %> (<%= k.subtest||'-' %>)</span>
-            </label>
-          <% }) %>
+        <!-- Pilih Modul/Materi -->
+        <div class="form-group">
+          <label><strong>Pilih Modul/Materi yang Dikirim:</strong></label>
+          <% if (_materi.length === 0) { %>
+            <p class="text-muted" style="font-size:0.88rem;">Belum ada materi di kelas ini.</p>
+          <% } else { %>
+            <div style="max-height:200px; overflow-y:auto; border:1px solid var(--border); border-radius:8px; padding:8px; margin-top:6px;">
+              <label style="display:block; padding:4px 6px; cursor:pointer; border-bottom:1px solid var(--border); font-weight:600;">
+                <input type="checkbox" onclick="this.closest('div').querySelectorAll('input[name=materi_ids]').forEach(c=>c.checked=this.checked)"/>
+                Pilih Semua Materi (<%= _materi.length %>)
+              </label>
+              <% _materi.forEach(function(m) { %>
+                <label style="display:block; padding:4px 6px; cursor:pointer; font-size:0.88rem;">
+                  <input type="checkbox" name="materi_ids" value="<%= m.id %>" checked/>
+                  <span class="badge" style="font-size:0.72rem;"><%= m.tipe %></span>
+                  <%= m.judul %>
+                  <% if (m.buku_judul) { %><span class="text-muted">(Buku: <%= m.buku_judul %>)</span><% } %>
+                </label>
+              <% }) %>
+            </div>
+          <% } %>
         </div>
-        <div class="form-group mt-2">
-          <label><input type="checkbox" name="include_materi" value="1" checked/> Kirim Materi/Modul</label><br/>
-          <label><input type="checkbox" name="include_rekomendasi" value="1" checked/> Kirim Rekomendasi Buku</label>
+
+        <!-- Pilih Kelas Tujuan -->
+        <div class="form-group">
+          <label><strong>Pilih Kelas Tujuan:</strong></label>
+          <div style="max-height:200px; overflow-y:auto; border:1px solid var(--border); border-radius:8px; padding:8px; margin-top:6px;">
+            <label style="display:block; padding:4px 6px; cursor:pointer; border-bottom:1px solid var(--border); font-weight:600;">
+              <input type="checkbox" onclick="this.closest('div').querySelectorAll('input[name=target_ids]').forEach(c=>c.checked=this.checked)"/>
+              Pilih Semua Kelas
+            </label>
+            <% _kelasLain.forEach(function(k) { %>
+              <label style="display:block; padding:4px 6px; cursor:pointer; font-size:0.88rem;">
+                <input type="checkbox" name="target_ids" value="<%= k.id %>"/>
+                <strong><%= k.nama %></strong>
+                <span class="text-muted"> - Tutor: <%= k.tutor_name %> (<%= k.subtest||'-' %>)</span>
+              </label>
+            <% }) %>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label><input type="checkbox" name="include_rekomendasi" value="1"/> Kirim juga Rekomendasi Buku (<%= _rekomendasi.length %>)</label>
         </div>
         <button class="btn btn-primary">Kirim ke Kelas Terpilih</button>
       </form>

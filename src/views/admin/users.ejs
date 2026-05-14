@@ -1,6 +1,74 @@
 <div class="page-header">
-  <div><h1>Manajemen User</h1><p class="subtitle"><%= users.length %> user terdaftar</p></div>
-  <a href="/admin/users/new" class="btn btn-primary">+ Tambah User</a>
+  <div><h1>Manajemen User</h1><p class="subtitle"><%= users.length %> user terdaftar (admin / tutor / murid)</p></div>
+  <a href="/admin/users/new" class="btn btn-primary">+ Tambah User Manual</a>
+</div>
+
+<div class="card" style="margin-bottom:14px;">
+  <p class="text-muted" style="font-size:0.88rem; margin-bottom:8px;">
+    <strong>Catatan:</strong> Pendaftaran manual via halaman daftar tetap aktif - akun masuk dengan status <span class="badge warn">pending</span> dan menunggu aktivasi admin.
+    Ekspor / impor di bawah berguna untuk menambahkan user dalam jumlah banyak (Admin / Tutor / Murid).
+  </p>
+  <div class="grid-2" style="gap:14px;">
+
+    <div>
+      <h3 style="margin:0 0 8px;">&#11015; Ekspor Pengguna</h3>
+      <div class="row-flex" style="flex-wrap:wrap; gap:6px;">
+        <a href="/admin/users/export.xlsx" class="btn btn-sm btn-secondary">Semua User</a>
+        <a href="/admin/users/export.xlsx?role=admin" class="btn btn-sm btn-secondary">Admin</a>
+        <a href="/admin/users/export.xlsx?role=tutor" class="btn btn-sm btn-secondary">Tutor</a>
+        <a href="/admin/users/export.xlsx?role=murid" class="btn btn-sm btn-secondary">Murid</a>
+      </div>
+
+      <h3 style="margin:14px 0 8px;">&#128229; Template Excel</h3>
+      <div class="row-flex" style="flex-wrap:wrap; gap:6px;">
+        <a href="/admin/users/template.xlsx?role=admin" class="btn btn-sm btn-secondary">Template Admin</a>
+        <a href="/admin/users/template.xlsx?role=tutor" class="btn btn-sm btn-secondary">Template Tutor</a>
+        <a href="/admin/users/template.xlsx?role=murid" class="btn btn-sm btn-secondary">Template Murid</a>
+      </div>
+      <p class="text-muted" style="font-size:0.82rem;margin-top:6px;">
+        Kolom: <code>name, email, phone, role, password, status</code>. Jika <code>password</code> kosong &rarr; default <code>password123</code>.
+      </p>
+    </div>
+
+    <div>
+      <h3 style="margin:0 0 8px;">&#11014; Impor Pengguna (Excel)</h3>
+      <form method="POST" action="/admin/users/import" enctype="multipart/form-data">
+        <div class="form-group" style="margin-bottom:8px;">
+          <label>Paksa Role (opsional)</label>
+          <select name="force_role" class="form-control">
+            <option value="">-- Ikuti kolom 'role' di file --</option>
+            <option value="admin">Semua jadi Admin</option>
+            <option value="tutor">Semua jadi Tutor</option>
+            <option value="murid">Semua jadi Murid</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:8px;">
+          <label>Status default user baru</label>
+          <select name="default_status" class="form-control">
+            <option value="active">Active (langsung bisa login)</option>
+            <option value="pending">Pending (perlu aktivasi)</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:8px;">
+          <label>File Excel (.xlsx / .xls / .csv)</label>
+          <input type="file" name="file" accept=".xlsx,.xls,.csv" class="form-control" required/>
+        </div>
+        <button class="btn btn-primary">Impor</button>
+      </form>
+    </div>
+
+  </div>
+</div>
+
+<div class="card" style="padding:8px; margin-bottom:14px;">
+  <strong>Filter:</strong>
+  <div class="row-flex" style="margin-top:6px;">
+    <a href="/admin/users" class="btn btn-sm <%= !(typeof currentRole!=='undefined'&&currentRole) ? 'btn-primary':'btn-secondary' %>">Semua</a>
+    <a href="/admin/users?role=admin" class="btn btn-sm btn-secondary">Admin</a>
+    <a href="/admin/users?role=tutor" class="btn btn-sm btn-secondary">Tutor</a>
+    <a href="/admin/users?role=murid" class="btn btn-sm btn-secondary">Murid</a>
+    <a href="/admin/users?status=pending" class="btn btn-sm btn-secondary">Pending</a>
+  </div>
 </div>
 
 <table class="tbl">
@@ -10,12 +78,17 @@
   <tbody>
     <% users.forEach(u => { %>
       <tr>
-        <td><strong><%= u.name %></strong></td>
+        <td><strong><%= u.name %></strong><% if (u.nomor_anggota) { %><div class="text-muted" style="font-size:0.78rem;"><%= u.nomor_anggota %></div><% } %></td>
         <td><%= u.email %></td>
         <td><%= u.phone || '-' %></td>
         <td><span class="badge <%= u.role==='admin' ? 'blue' : u.role==='tutor' ? 'warn' : '' %>"><%= u.role %></span></td>
-        <td><span class="badge <%= u.status==='suspended' ? 'red' : '' %>"><%= u.status %></span></td>
+        <td><span class="badge <%= u.status==='suspended' ? 'red' : (u.status==='pending' ? 'warn' : '') %>"><%= u.status %></span></td>
         <td class="row-flex">
+          <% if (u.status==='pending') { %>
+            <form method="POST" action="/admin/users/<%= u.id %>/activate" style="display:inline;">
+              <button class="btn btn-sm btn-primary">Aktifkan</button>
+            </form>
+          <% } %>
           <a href="/admin/users/<%= u.id %>/edit" class="btn btn-sm btn-secondary">Edit</a>
           <form method="POST" action="/admin/users/<%= u.id %>?_method=DELETE" onsubmit="return confirm('Hapus user ini?')" style="display:inline;">
             <button class="btn btn-sm btn-danger">Hapus</button>
@@ -23,5 +96,8 @@
         </td>
       </tr>
     <% }) %>
+    <% if (!users.length) { %>
+      <tr><td colspan="6" class="text-muted text-center">Tidak ada user pada filter ini.</td></tr>
+    <% } %>
   </tbody>
 </table>

@@ -35,8 +35,17 @@ router.get('/', (req, res) => {
 
 // ==================== USER MANAGEMENT ====================
 router.get('/users', (req, res) => {
-  const users = db.prepare('SELECT * FROM users ORDER BY created_at DESC').all();
-  res.render('admin/users', { title: 'Manajemen User', users });
+  const role = (req.query.role || '').trim();
+  const status = (req.query.status || '').trim();
+  const validRoles = ['admin','tutor','murid'];
+  const validStatus = ['active','pending','suspended'];
+  let sql = 'SELECT * FROM users WHERE 1=1';
+  const params = [];
+  if (validRoles.includes(role)) { sql += ' AND role=?'; params.push(role); }
+  if (validStatus.includes(status)) { sql += ' AND status=?'; params.push(status); }
+  sql += ' ORDER BY created_at DESC';
+  const users = db.prepare(sql).all(...params);
+  res.render('admin/users', { title: 'Manajemen User', users, currentRole: role, currentStatus: status });
 });
 
 router.get('/users/new', (req, res) => res.render('admin/user-form', { title: 'Tambah User', u: null }));
@@ -84,34 +93,72 @@ router.post('/users/:id/activate', (req, res) => {
   req.flash('success', 'User diaktivasi.'); res.redirect('/admin/users');
 });
 
-// Import/Export Users
+// Import/Export Users (semua / per role)
 router.get('/users/export.xlsx', (req, res) => {
-  const users = db.prepare('SELECT id,nomor_anggota,name,email,phone,role,status,created_at FROM users').all();
+  const role = (req.query.role || '').trim();
+  const validRoles = ['admin','tutor','murid'];
+  let users;
+  if (validRoles.includes(role)) {
+    users = db.prepare('SELECT id,nomor_anggota,name,email,phone,role,status,created_at FROM users WHERE role=? ORDER BY name').all(role);
+  } else {
+    users = db.prepare('SELECT id,nomor_anggota,name,email,phone,role,status,created_at FROM users ORDER BY role,name').all();
+  }
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(users), 'Users');
   const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-  res.setHeader('Content-Disposition', 'attachment; filename="users-rubela.xlsx"');
+  const fname = role ? `users-${role}-rubela.xlsx` : 'users-rubela.xlsx';
+  res.setHeader('Content-Disposition', `attachment; filename="${fname}"`);
+  res.send(buf);
+});
+
+// Template import users (xlsx)
+router.get('/users/template.xlsx', (req, res) => {
+  const role = (req.query.role || 'murid').trim();
+  const data = [
+    { name:'Contoh Nama 1', email:'user1@example.com', phone:'081234567890', role: role, password:'password123', status:'active' },
+    { name:'Contoh Nama 2', email:'user2@example.com', phone:'081234567891', role: role, password:'',           status:'active' },
+  ];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), 'Users');
+  const buf = XLSX.write(wb, { type:'buffer', bookType:'xlsx' });
+  res.setHeader('Content-Type','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename="template-users-${role}.xlsx"`);
   res.send(buf);
 });
 
 router.post('/users/import', upload.single('file'), (req, res) => {
   if (!req.file) { req.flash('error', 'File wajib.'); return res.redirect('/admin/users'); }
+  // Optional: paksa role dari form (admin/tutor/murid). Kalau kosong, baca per baris.
+  const forceRole = (req.body.force_role || '').trim();
+  const validRoles = ['admin','tutor','murid'];
+  // Status default: active (admin import dianggap trusted). Boleh override ke pending.
+  const defaultStatus = req.body.default_status === 'pending' ? 'pending' : 'active';
   try {
     const wb = XLSX.readFile(req.file.path);
     const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-    let ok = 0;
+    let ok = 0, skip = 0;
     rows.forEach(r => {
-      const name = r.name || r.Nama; if (!name) return;
-      const email = r.email || r.Email; if (!email) return;
+      const name = r.name || r.Nama || r.NAMA;
+      const email = r.email || r.Email || r.EMAIL;
+      if (!name || !email) { skip++; return; }
       const exists = db.prepare('SELECT id FROM users WHERE email=?').get(email);
-      if (exists) return;
+      if (exists) { skip++; return; }
+      let role = (forceRole && validRoles.includes(forceRole)) ? forceRole : (r.role || r.Role || 'murid');
+      role = String(role).toLowerCase();
+      if (!validRoles.includes(role)) role = 'murid';
+      const phone = r.phone || r.Phone || r.HP || r.no_hp || null;
+      const rawPwd = r.password || r.Password || 'password123';
+      const status = (r.status || defaultStatus);
       const info = db.prepare('INSERT INTO users (name,email,phone,password,role,status) VALUES (?,?,?,?,?,?)')
-        .run(name, email, r.phone || r.Phone || null, bcrypt.hashSync('password123', 10), r.role || 'murid', 'active');
+        .run(name, email, phone ? String(phone) : null, bcrypt.hashSync(String(rawPwd), 10), role, ['active','pending','suspended'].includes(status) ? status : 'active');
       assignNomorAnggota(info.lastInsertRowid);
       ok++;
     });
-    req.flash('success', `${ok} user diimport.`);
+    let msg = `${ok} user diimport`;
+    if (forceRole) msg += ` (role=${forceRole})`;
+    if (skip > 0) msg += `. ${skip} dilewati (duplikat email / data tidak lengkap).`;
+    req.flash('success', msg);
   } catch (e) { req.flash('error', 'Gagal: ' + e.message); }
   res.redirect('/admin/users');
 });
@@ -282,7 +329,13 @@ router.post('/kelas/:id/kirim-materi', (req, res) => {
   const targets = Array.isArray(req.body.target_ids) ? req.body.target_ids : [req.body.target_ids].filter(Boolean);
   if (targets.length === 0) { req.flash('error','Pilih kelas tujuan.'); return res.redirect('/admin/kelas/'+sourceId); }
   let totalMat=0, totalRek=0;
-  if (req.body.include_materi) {
+  // Support selective materi via materi_ids checkboxes
+  const matIds = req.body.materi_ids ? (Array.isArray(req.body.materi_ids) ? req.body.materi_ids : [req.body.materi_ids]) : null;
+  if (matIds && matIds.length > 0) {
+    const source = db.prepare('SELECT * FROM materi WHERE kelas_id=? AND id IN (' + matIds.map(()=>'?').join(',') + ')').all(sourceId, ...matIds);
+    const ins = db.prepare('INSERT INTO materi (kelas_id,tutor_id,judul,deskripsi,tipe,file,link,buku_id) VALUES (?,?,?,?,?,?,?,?)');
+    targets.forEach(t => source.forEach(m => { ins.run(t, req.session.user.id, m.judul, m.deskripsi, m.tipe, m.file, m.link, m.buku_id); totalMat++; }));
+  } else if (req.body.include_materi) {
     const source = db.prepare('SELECT * FROM materi WHERE kelas_id=?').all(sourceId);
     const ins = db.prepare('INSERT INTO materi (kelas_id,tutor_id,judul,deskripsi,tipe,file,link,buku_id) VALUES (?,?,?,?,?,?,?,?)');
     targets.forEach(t => source.forEach(m => { ins.run(t, req.session.user.id, m.judul, m.deskripsi, m.tipe, m.file, m.link, m.buku_id); totalMat++; }));
@@ -321,6 +374,14 @@ router.post('/bank-soal/bulk-poin', (req, res) => {
   req.flash('success',`Poin semua soal ${subtest} diubah ke ${poin}.`); res.redirect('/admin/bank-soal?subtest='+subtest);
 });
 router.delete('/bank-soal/:id', (req, res) => { db.prepare('DELETE FROM bank_soal WHERE id=?').run(req.params.id); req.flash('success','Soal dihapus.'); res.redirect('/admin/bank-soal'); });
+// JSON detail soal (untuk modal "Lihat")
+router.get('/bank-soal/:id/json', (req, res) => {
+  const s = db.prepare('SELECT bs.*,u.name AS creator FROM bank_soal bs LEFT JOIN users u ON u.id=bs.created_by WHERE bs.id=?').get(req.params.id);
+  if (!s) return res.status(404).json({ ok:false, error:'Soal tidak ditemukan' });
+  let opsi = []; try { opsi = JSON.parse(s.opsi_json || '[]'); } catch(e){}
+  let jawaban; try { jawaban = JSON.parse(s.jawaban_json || '""'); } catch(e) { jawaban = s.jawaban_json; }
+  res.json({ ok:true, soal: { id:s.id, soal:s.soal, tipe:s.tipe, subtest:s.subtest, poin:s.poin, opsi, jawaban, penjelasan:s.penjelasan, creator:s.creator, created_at:s.created_at } });
+});
 // Detail & Edit soal
 router.get('/bank-soal/:id', (req, res) => {
   const s = db.prepare('SELECT * FROM bank_soal WHERE id=?').get(req.params.id);
@@ -422,6 +483,10 @@ router.post('/ujian/:id/publish', (req, res) => {
     });
   }
   req.flash('success','Ujian dipublikasi.'); res.redirect('/admin/ujian');
+});
+router.post('/ujian/:id/tunda', (req, res) => {
+  db.prepare("UPDATE ujian SET status='draft' WHERE id=?").run(req.params.id);
+  req.flash('success','Ujian ditunda (kembali ke draft).'); res.redirect('/admin/ujian');
 });
 router.get('/ujian/:id/hasil', (req, res) => {
   const uj = db.prepare('SELECT * FROM ujian WHERE id=?').get(req.params.id);
@@ -583,7 +648,53 @@ router.get('/rekap', (req, res) => {
   const totalDenda = db.prepare('SELECT COALESCE(SUM(denda),0) c FROM peminjaman WHERE denda>0').get().c;
   const totalUjian = db.prepare('SELECT COUNT(*) c FROM ujian').get().c;
   const totalSoal = db.prepare('SELECT COUNT(*) c FROM bank_soal').get().c;
-  res.render('admin/rekap', { title: 'Rekapitulasi', totalPinjam, totalDenda, totalUjian, totalSoal });
+  const totalKelas = db.prepare('SELECT COUNT(*) c FROM kelas').get().c;
+  const totalMurid = db.prepare("SELECT COUNT(*) c FROM users WHERE role='murid'").get().c;
+  const totalTutor = db.prepare("SELECT COUNT(*) c FROM users WHERE role='tutor'").get().c;
+
+  // Rekap siswa: hasil ujian terakhir per siswa
+  const rekapSiswa = db.prepare(`
+    SELECT u.id, u.name, u.email, k.nama AS kelas_nama,
+      (SELECT COUNT(*) FROM ujian_peserta up2 WHERE up2.user_id=u.id AND up2.status='selesai') total_ujian,
+      (SELECT ROUND(AVG(up3.nilai),1) FROM ujian_peserta up3 WHERE up3.user_id=u.id AND up3.status='selesai') avg_nilai,
+      (SELECT COUNT(*) FROM progress_baca pb WHERE pb.user_id=u.id) modul_dibaca,
+      (SELECT ROUND(AVG(pb2.persentase),0) FROM progress_baca pb2 WHERE pb2.user_id=u.id) avg_progress
+    FROM users u
+    LEFT JOIN kelas_member km ON km.user_id=u.id
+    LEFT JOIN kelas k ON k.id=km.kelas_id
+    WHERE u.role='murid' AND u.status='active'
+    GROUP BY u.id
+    ORDER BY u.name
+    LIMIT 100
+  `).all();
+
+  // Rekap tutor: berapa kali buat pertemuan + pertemuan yg punya modul
+  const rekapTutor = db.prepare(`
+    SELECT u.id, u.name, u.email,
+      (SELECT COUNT(*) FROM kelas WHERE tutor_id=u.id) jml_kelas,
+      (SELECT COUNT(*) FROM pertemuan WHERE kelas_id IN (SELECT id FROM kelas WHERE tutor_id=u.id)) jml_pertemuan,
+      (SELECT COUNT(*) FROM materi WHERE tutor_id=u.id) jml_materi,
+      (SELECT COUNT(DISTINCT p2.id) FROM pertemuan p2 WHERE p2.kelas_id IN (SELECT id FROM kelas WHERE tutor_id=u.id) AND EXISTS (SELECT 1 FROM materi m WHERE m.pertemuan_id=p2.id)) pertemuan_dgn_modul
+    FROM users u
+    WHERE u.role='tutor' AND u.status='active'
+    ORDER BY u.name
+  `).all();
+
+  // Rekap kelas
+  const rekapKelas = db.prepare(`
+    SELECT k.id, k.nama, k.kode, u.name AS tutor_name,
+      (SELECT COUNT(*) FROM kelas_member WHERE kelas_id=k.id) jml_murid,
+      (SELECT COUNT(*) FROM pertemuan WHERE kelas_id=k.id) jml_pertemuan,
+      (SELECT COUNT(*) FROM materi WHERE kelas_id=k.id) jml_materi,
+      (SELECT COUNT(*) FROM ujian WHERE kelas_id=k.id) jml_ujian
+    FROM kelas k JOIN users u ON u.id=k.tutor_id
+    ORDER BY k.nama
+  `).all();
+
+  res.render('admin/rekap', {
+    title: 'Rekapitulasi', totalPinjam, totalDenda, totalUjian, totalSoal,
+    totalKelas, totalMurid, totalTutor, rekapSiswa, rekapTutor, rekapKelas
+  });
 });
 
 module.exports = router;
