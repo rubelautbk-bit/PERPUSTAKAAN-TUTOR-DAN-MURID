@@ -1,1 +1,247 @@
-<div class="page-header"><div><a href="/admin/kelas">&larr; Kelas</a><h1><%= kelas.nama %></h1><p class="subtitle">Kode: <strong><%= kelas.kode %></strong> | Tutor: <%= kelas.tutor_name %></p></div></div><div class="grid-2"><div class="card"><h3>Tambah Murid (Bulk)</h3><form method="POST" action="/admin/kelas/<%= kelas.id %>/members"><div style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:10px;"><label style="display:block;padding:6px;cursor:pointer;border-bottom:1px solid var(--border);"><input type="checkbox" onclick="this.closest('form').querySelectorAll('input[name=user_ids]').forEach(c=>c.checked=this.checked)"/> <strong>Pilih Semua</strong></label><% allMurid.forEach(m=>{ %><label style="display:block;padding:6px;cursor:pointer;"><input type="checkbox" name="user_ids" value="<%= m.id %>"/> <%= m.name %> (<%= m.email %>)</label><% }) %></div><button class="btn btn-primary mt-2">Tambahkan Terpilih</button></form></div><div class="card"><h3>Anggota (<%= members.length %>)</h3><% members.forEach(m=>{ %><div style="padding:6px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;"><span><%= m.name %> - <%= m.email %></span><form method="POST" action="/admin/kelas/<%= kelas.id %>/members/<%= m.id %>?_method=DELETE"><button class="btn btn-sm btn-danger">X</button></form></div><% }) %></div></div>
+<div class="page-header">
+  <div>
+    <a href="/admin/kelas" class="text-muted">&larr; Semua Kelas</a>
+    <h1 style="margin:4px 0;"><%= kelas.nama %></h1>
+    <p class="subtitle">Kode kelas: <strong><%= kelas.kode %></strong> | Subtest: <%= kelas.subtest || '-' %> | Tutor: <%= kelas.tutor_name %></p>
+  </div>
+</div>
+
+<% if (kelas.deskripsi) { %>
+  <div class="card"><%= kelas.deskripsi %></div>
+<% } %>
+
+<%
+var _allMurid    = (typeof allMurid    !== 'undefined' && allMurid)    ? allMurid    : [];
+var _pertemuan   = (typeof pertemuan   !== 'undefined' && pertemuan)   ? pertemuan   : [];
+var _materi      = (typeof materi      !== 'undefined' && materi)      ? materi      : [];
+var _bukuList    = (typeof bukuList    !== 'undefined' && bukuList)    ? bukuList    : [];
+var _rekomendasi = (typeof rekomendasi !== 'undefined' && rekomendasi) ? rekomendasi : [];
+var _tugasList   = (typeof tugasList   !== 'undefined' && tugasList)   ? tugasList   : [];
+var _kelasLain   = (typeof kelasLain   !== 'undefined' && kelasLain)   ? kelasLain   : [];
+%>
+
+<!-- TABS -->
+<div class="card" style="padding:6px; display:flex; gap:4px; flex-wrap:wrap;">
+  <button class="btn btn-sm tab-btn active" data-tab="murid">Daftar Murid (<%= members.length %>)</button>
+  <button class="btn btn-sm tab-btn" data-tab="materi">Modul/Bahan Bacaan (<%= _materi.length %>)</button>
+  <button class="btn btn-sm tab-btn" data-tab="rekomendasi">Rekomendasi Buku (<%= _rekomendasi.length %>)</button>
+  <button class="btn btn-sm tab-btn" data-tab="tugas">Tugas/Kuis (<%= _tugasList.length %>)</button>
+  <button class="btn btn-sm tab-btn" data-tab="pertemuan">Pertemuan (<%= _pertemuan.length %>)</button>
+  <button class="btn btn-sm tab-btn" data-tab="kirim">Kirim ke Kelas Lain</button>
+</div>
+
+<!-- TAB: MURID -->
+<div class="tab-content" data-tab="murid">
+  <div class="grid-2">
+    <div class="card">
+      <h3>Tambah Murid (Bulk)</h3>
+      <form method="POST" action="/admin/kelas/<%= kelas.id %>/members">
+        <div style="max-height:300px; overflow-y:auto; border:1px solid var(--border); border-radius:8px; padding:10px;">
+          <label style="display:block; padding:6px; cursor:pointer; border-bottom:1px solid var(--border);">
+            <input type="checkbox" onclick="this.closest('form').querySelectorAll('input[name=user_ids]').forEach(c=>c.checked=this.checked)"/>
+            <strong>Pilih Semua</strong>
+          </label>
+          <% _allMurid.forEach(function(m) { %>
+            <label style="display:block; padding:6px; cursor:pointer;">
+              <input type="checkbox" name="user_ids" value="<%= m.id %>"/>
+              <%= m.name %> (<%= m.email %>)
+            </label>
+          <% }) %>
+          <% if (_allMurid.length === 0) { %><p class="text-muted">Semua murid sudah masuk kelas atau belum ada murid aktif.</p><% } %>
+        </div>
+        <button class="btn btn-primary mt-2">Tambahkan Terpilih</button>
+      </form>
+    </div>
+    <div class="card">
+      <h3>Anggota (<%= members.length %>)</h3>
+      <% members.forEach(function(m) { %>
+        <div style="padding:8px 0; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <strong><%= m.name %></strong>
+            <div class="text-muted" style="font-size:0.85rem;"><%= m.email %></div>
+          </div>
+          <form method="POST" action="/admin/kelas/<%= kelas.id %>/members/<%= m.id %>?_method=DELETE" onsubmit="return confirm('Hapus murid dari kelas?')">
+            <button class="btn btn-sm btn-danger">X</button>
+          </form>
+        </div>
+      <% }) %>
+      <% if (members.length === 0) { %><p class="text-muted">Belum ada murid.</p><% } %>
+    </div>
+  </div>
+</div>
+
+<!-- TAB: MATERI -->
+<div class="tab-content" data-tab="materi" style="display:none;">
+  <div class="grid-2">
+    <div class="card">
+      <h3>Tambah Modul/Bahan Bacaan</h3>
+      <form method="POST" action="/admin/kelas/<%= kelas.id %>/materi" enctype="multipart/form-data">
+        <div class="form-group"><label>Judul</label><input name="judul" class="form-control" required/></div>
+        <div class="form-group"><label>Deskripsi</label><textarea name="deskripsi" class="form-control" rows="2"></textarea></div>
+        <div class="form-group">
+          <label>Pilih Buku dari Katalog (opsional)</label>
+          <select name="buku_id" class="form-control">
+            <option value="">-- Tidak pakai buku --</option>
+            <% _bukuList.forEach(function(b) { %>
+              <option value="<%= b.id %>"><%= b.judul %><% if(b.penulis){ %> - <%= b.penulis %><% } %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="form-group"><label>Link Eksternal (opsional)</label><input type="url" name="link" class="form-control" placeholder="https://..."/></div>
+        <div class="form-group"><label>Upload File (opsional)</label><input type="file" name="file" class="form-control"/></div>
+        <div class="form-group">
+          <label>Untuk Pertemuan (opsional)</label>
+          <select name="pertemuan_id" class="form-control">
+            <option value="">-- Semua pertemuan --</option>
+            <% _pertemuan.forEach(function(p) { %>
+              <option value="<%= p.id %>">Pertemuan <%= p.nomor %>: <%= p.judul %></option>
+            <% }) %>
+          </select>
+        </div>
+        <button class="btn btn-primary">Tambah Materi</button>
+      </form>
+    </div>
+    <div class="card">
+      <h3>Daftar Materi (<%= _materi.length %>)</h3>
+      <% _materi.forEach(function(m) { %>
+        <div style="padding:10px 0; border-bottom:1px solid var(--border);">
+          <span class="badge"><%= m.tipe %></span>
+          <strong><%= m.judul %></strong>
+          <% if (m.deskripsi) { %><p style="margin:4px 0;font-size:0.9rem;"><%= m.deskripsi %></p><% } %>
+          <% if (m.buku_judul) { %><div class="text-muted" style="font-size:0.85rem;">Buku: <a href="/buku/<%= m.buku_id %>"><%= m.buku_judul %></a></div><% } %>
+          <% if (m.link) { %><a href="<%= m.link %>" target="_blank" class="btn btn-sm btn-secondary">Link</a><% } %>
+          <% if (m.file) { %><a href="/uploads/<%= m.file %>" target="_blank" class="btn btn-sm btn-secondary">File</a><% } %>
+        </div>
+      <% }) %>
+      <% if (_materi.length === 0) { %><p class="text-muted">Belum ada materi.</p><% } %>
+    </div>
+  </div>
+</div>
+
+<!-- TAB: REKOMENDASI BUKU -->
+<div class="tab-content" data-tab="rekomendasi" style="display:none;">
+  <div class="grid-2">
+    <div class="card">
+      <h3>Rekomendasikan Buku</h3>
+      <form method="POST" action="/admin/kelas/<%= kelas.id %>/rekomendasi">
+        <div class="form-group">
+          <label>Pilih Buku</label>
+          <select name="buku_id" class="form-control" required>
+            <option value="">-- Pilih dari katalog --</option>
+            <% _bukuList.forEach(function(b) { %>
+              <option value="<%= b.id %>"><%= b.judul %><% if(b.penulis){ %> - <%= b.penulis %><% } %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="form-group"><label>Catatan</label><textarea name="catatan" class="form-control" rows="2"></textarea></div>
+        <button class="btn btn-primary">Tambah Rekomendasi</button>
+      </form>
+    </div>
+    <div class="card">
+      <h3>Rekomendasi Aktif (<%= _rekomendasi.length %>)</h3>
+      <% _rekomendasi.forEach(function(r) { %>
+        <div style="padding:10px 0; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:start;">
+          <div>
+            <a href="/buku/<%= r.buku_id %>" style="font-weight:600;"><%= r.judul %></a>
+            <div class="text-muted" style="font-size:0.85rem;"><%= r.penulis || '' %></div>
+            <% if (r.catatan) { %><p style="margin:4px 0; font-size:0.85rem;">"<%= r.catatan %>"</p><% } %>
+          </div>
+          <form method="POST" action="/admin/kelas/<%= kelas.id %>/rekomendasi/<%= r.id %>?_method=DELETE"><button class="btn btn-sm btn-danger">X</button></form>
+        </div>
+      <% }) %>
+      <% if (_rekomendasi.length === 0) { %><p class="text-muted">Belum ada rekomendasi.</p><% } %>
+    </div>
+  </div>
+</div>
+
+<!-- TAB: TUGAS/KUIS -->
+<div class="tab-content" data-tab="tugas" style="display:none;">
+  <div class="card">
+    <div class="page-header">
+      <h3 style="margin:0;">Tugas &amp; Kuis (<%= _tugasList.length %>)</h3>
+      <a href="/admin/ujian/new?kelas_id=<%= kelas.id %>" class="btn btn-primary">+ Buat Tugas</a>
+    </div>
+    <% _tugasList.forEach(function(t) { %>
+      <div style="padding:10px 0; border-bottom:1px solid var(--border);">
+        <span class="badge"><%= t.tipe %></span>
+        <strong><%= t.judul %></strong>
+        <div class="text-muted" style="font-size:0.85rem;">
+          Durasi: <%= t.durasi_menit %> menit | Status: <span class="badge <%= t.status==='aktif'?'':'warn' %>"><%= t.status %></span>
+        </div>
+        <div class="row-flex mt-1">
+          <a href="/admin/ujian/<%= t.id %>/soal" class="btn btn-sm btn-secondary">Soal</a>
+          <a href="/admin/ujian/<%= t.id %>/hasil" class="btn btn-sm btn-secondary">Hasil</a>
+        </div>
+      </div>
+    <% }) %>
+    <% if (_tugasList.length === 0) { %><p class="text-muted">Belum ada tugas/kuis.</p><% } %>
+  </div>
+</div>
+
+<!-- TAB: PERTEMUAN -->
+<div class="tab-content" data-tab="pertemuan" style="display:none;">
+  <div class="grid-2">
+    <div class="card">
+      <h3>Tambah Pertemuan</h3>
+      <form method="POST" action="/admin/kelas/<%= kelas.id %>/pertemuan">
+        <div class="form-group"><label>Nomor</label><input type="number" name="nomor" class="form-control" required min="1"/></div>
+        <div class="form-group"><label>Judul</label><input name="judul" class="form-control" required/></div>
+        <div class="form-group"><label>Tanggal</label><input type="date" name="tanggal" class="form-control"/></div>
+        <div class="form-group"><label>Deskripsi</label><textarea name="deskripsi" class="form-control" rows="2"></textarea></div>
+        <button class="btn btn-primary">Tambah</button>
+      </form>
+    </div>
+    <div class="card">
+      <h3>Daftar Pertemuan (<%= _pertemuan.length %>)</h3>
+      <% _pertemuan.forEach(function(p) { %>
+        <div style="padding:8px 0; border-bottom:1px solid var(--border);">
+          <strong>Pertemuan <%= p.nomor %>: <%= p.judul %></strong>
+          <% if (p.tanggal) { %><div class="text-muted" style="font-size:0.85rem;"><%= p.tanggal %></div><% } %>
+          <% if (p.deskripsi) { %><p style="margin:4px 0;font-size:0.85rem;"><%= p.deskripsi %></p><% } %>
+        </div>
+      <% }) %>
+      <% if (_pertemuan.length === 0) { %><p class="text-muted">Belum ada pertemuan.</p><% } %>
+    </div>
+  </div>
+</div>
+
+<!-- TAB: KIRIM KE KELAS LAIN -->
+<div class="tab-content" data-tab="kirim" style="display:none;">
+  <div class="card">
+    <h3>Kirim Modul &amp; Rekomendasi ke Kelas Lain</h3>
+    <p class="text-muted">Duplikasi semua modul dan rekomendasi buku ke kelas tujuan.</p>
+    <% if (_kelasLain.length === 0) { %>
+      <p class="text-muted">Tidak ada kelas lain yang aktif sebagai tujuan.</p>
+    <% } else { %>
+      <form method="POST" action="/admin/kelas/<%= kelas.id %>/kirim-materi">
+        <div style="max-height:300px; overflow-y:auto; border:1px solid var(--border); border-radius:8px; padding:10px;">
+          <% _kelasLain.forEach(function(k) { %>
+            <label style="display:block; padding:6px; cursor:pointer; border-bottom:1px solid var(--border);">
+              <input type="checkbox" name="target_ids" value="<%= k.id %>"/>
+              <strong><%= k.nama %></strong>
+              <span class="text-muted" style="font-size:0.85rem;"> - Tutor: <%= k.tutor_name %> (<%= k.subtest||'-' %>)</span>
+            </label>
+          <% }) %>
+        </div>
+        <div class="form-group mt-2">
+          <label><input type="checkbox" name="include_materi" value="1" checked/> Kirim Materi/Modul</label><br/>
+          <label><input type="checkbox" name="include_rekomendasi" value="1" checked/> Kirim Rekomendasi Buku</label>
+        </div>
+        <button class="btn btn-primary">Kirim ke Kelas Terpilih</button>
+      </form>
+    <% } %>
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.tab-btn').forEach(function(b) {
+  b.addEventListener('click', function() {
+    var tab = this.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(function(x){ x.classList.remove('active'); });
+    this.classList.add('active');
+    document.querySelectorAll('.tab-content').forEach(function(c) {
+      c.style.display = (c.dataset.tab === tab) ? '' : 'none';
+    });
+  });
+});
+</script>

@@ -8,6 +8,9 @@ const router = express.Router();
 
 router.get('/login', (req, res) => {
   if (req.session.user) return res.redirect('/');
+  if (req.query.multi_login) {
+    req.flash('error', 'Akun Anda baru saja login dari perangkat/browser lain. Sesi lama dihentikan.');
+  }
   res.render('auth/login', { title: 'Masuk', layout: 'layouts/auth' });
 });
 
@@ -20,11 +23,16 @@ router.post('/login', (req, res) => {
   if (user.status === 'suspended') { req.flash('error', 'Akun disuspend. Hubungi admin.'); return res.redirect('/auth/login'); }
   if (!bcrypt.compareSync(password, user.password)) { req.flash('error', 'Password salah.'); return res.redirect('/auth/login'); }
 
-  req.session.user = { id: user.id, name: user.name, email: user.email, role: user.role, avatar: user.avatar, nomor_anggota: user.nomor_anggota };
-  req.flash('success', `Selamat datang, ${user.name}!`);
-  if (user.role === 'admin') return res.redirect('/admin');
-  if (user.role === 'tutor') return res.redirect('/tutor');
-  return res.redirect('/murid');
+  // Anti multi-login (terutama untuk murid): rotate session ID, invalidate session lama
+  req.session.regenerate(function(regenErr) {
+    if (regenErr) { req.flash('error','Gagal membuat sesi.'); return res.redirect('/auth/login'); }
+    req.session.user = { id: user.id, name: user.name, email: user.email, role: user.role, avatar: user.avatar, nomor_anggota: user.nomor_anggota };
+    db.prepare('UPDATE users SET active_session_id=? WHERE id=?').run(req.sessionID, user.id);
+    req.flash('success', `Selamat datang, ${user.name}!`);
+    if (user.role === 'admin') return res.redirect('/admin');
+    if (user.role === 'tutor') return res.redirect('/tutor');
+    return res.redirect('/murid');
+  });
 });
 
 router.get('/register', (req, res) => {

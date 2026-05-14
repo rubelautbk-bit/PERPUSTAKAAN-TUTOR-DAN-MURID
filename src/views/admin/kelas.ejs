@@ -88,7 +88,8 @@ function onNamaChange() {
   if (sel.value === '__CUSTOM__') {
     group.style.display = '';
     manual.required = true;
-    hiddenField.value = '';
+    // Pakai nilai yang sudah diketik (atau kosongkan supaya user wajib isi)
+    hiddenField.value = (manual.value || '').trim();
     subtestInput.value = '';
   } else {
     group.style.display = 'none';
@@ -99,16 +100,19 @@ function onNamaChange() {
   }
 }
 document.getElementById('namaManual').addEventListener('input', function() {
-  document.getElementById('namaField').value = this.value;
+  document.getElementById('namaField').value = this.value.trim();
 });
 // Initialize
 onNamaChange();
 
 document.getElementById('formKelas').addEventListener('submit', function(e) {
   var hiddenField = document.getElementById('namaField');
-  if (!hiddenField.value || !hiddenField.value.trim()) {
+  var nama = (hiddenField.value || '').trim();
+  if (!nama) {
     e.preventDefault();
     alert('Nama kelas tidak boleh kosong.');
+    return;
   }
+  hiddenField.value = nama;
 });
 </script>

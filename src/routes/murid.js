@@ -185,12 +185,21 @@ router.post('/ujian/:id/submit', express.json(), (req, res) => {
   if (!uj) return res.json({ok:false,error:'Ujian tidak ada'});
   const jawaban = req.body.jawaban || {}; // { bank_soal_id: answer }
   const soalList = db.prepare('SELECT bs.* FROM ujian_soal us JOIN bank_soal bs ON bs.id=us.bank_soal_id WHERE us.ujian_id=?').all(uj.id);
+  function norm(v) {
+    if (Array.isArray(v)) return JSON.stringify([...v].map(x => String(x).trim()).sort());
+    if (v === null || v === undefined) return '';
+    return String(v).trim().toLowerCase();
+  }
   let benar=0, salah=0, kosong=0, totalPoin=0;
   soalList.forEach(s => {
     const userAns = jawaban[String(s.id)];
-    if (!userAns || userAns === '') { kosong++; return; }
-    let correct = false;
-    try { const expected = JSON.parse(s.jawaban_json); correct = (JSON.stringify(userAns) === JSON.stringify(expected) || userAns === expected); } catch(e) { correct = (userAns === s.jawaban_json); }
+    const isEmpty = userAns === undefined || userAns === null || userAns === '' || (Array.isArray(userAns) && userAns.length === 0);
+    if (isEmpty) { kosong++; return; }
+    // Esai dinilai manual; di-skip dari auto-grading (anggap kosong sampai dinilai)
+    if (s.tipe === 'esai') { kosong++; return; }
+    let expected;
+    try { expected = JSON.parse(s.jawaban_json); } catch(e) { expected = s.jawaban_json; }
+    const correct = norm(userAns) === norm(expected);
     if (correct) { benar++; totalPoin += s.poin; } else { salah++; totalPoin -= uj.poin_negatif||0; }
   });
   const nilai = soalList.length>0 ? Math.max(0, Math.round((totalPoin / soalList.reduce((a,s)=>a+s.poin,0))*100)) : 0;

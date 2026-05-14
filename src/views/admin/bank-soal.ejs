@@ -19,13 +19,13 @@
 
 <div class="grid-2">
   <div class="card">
-    <h3>Import Soal (Excel/CSV)</h3>
+    <h3>Import Soal (Excel/CSV/Word)</h3>
     <form method="POST" action="/admin/bank-soal/import" enctype="multipart/form-data">
-      <input type="file" name="file" accept=".xlsx,.xls,.csv" class="form-control" required/>
+      <input type="file" name="file" accept=".xlsx,.xls,.csv,.docx" class="form-control" required/>
       <button class="btn btn-primary mt-2">Import</button>
     </form>
     <p class="text-muted" style="font-size:0.85rem; margin-top:6px;">
-      Download template di atas untuk format yang benar.
+      Format Excel/CSV: kolom <code>subtest, soal, tipe, opsi_json, jawaban_json, poin, penjelasan</code>. Format Word (.docx): blok per soal dipisah <code>---</code>.
     </p>
   </div>
   <% if (currentSubtest) { %>

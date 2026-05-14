@@ -467,6 +467,7 @@ module.exports = function initSchema(db) {
   tryAdd(`ALTER TABLE materi ADD COLUMN pertemuan_id INTEGER`);
   tryAdd(`ALTER TABLE materi ADD COLUMN buku_id INTEGER`);
   tryAdd(`ALTER TABLE forum ADD COLUMN kelas_id INTEGER`);
+  tryAdd(`ALTER TABLE users ADD COLUMN active_session_id TEXT`);
 
   // Default settings
   const insertSetting = db.prepare('INSERT OR IGNORE INTO setting (key,value) VALUES (?,?)');

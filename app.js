@@ -37,6 +37,22 @@ app.use(flash());
 
 // Global middleware - i18n + user + timezone
 app.use((req, res, next) => {
+  // Anti multi-login: kalau session ini bukan yang terakhir aktif untuk user, kick.
+  // Hanya enforce untuk role murid (admin/tutor boleh multi-tab tanpa kick).
+  if (req.session.user && req.session.user.role === 'murid') {
+    try {
+      const u = db.prepare('SELECT active_session_id FROM users WHERE id=?').get(req.session.user.id);
+      if (u && u.active_session_id && u.active_session_id !== req.sessionID) {
+        return req.session.destroy(() => {
+          if (req.xhr || req.path.startsWith('/api') || req.headers.accept?.includes('application/json')) {
+            return res.status(401).json({ ok: false, error: 'multi_login_detected' });
+          }
+          res.redirect('/auth/login?multi_login=1');
+        });
+      }
+    } catch (e) { /* tabel mungkin belum ada, skip */ }
+  }
+
   res.locals.user = req.session.user || null;
   res.locals.success = req.flash('success');
   res.locals.error = req.flash('error');

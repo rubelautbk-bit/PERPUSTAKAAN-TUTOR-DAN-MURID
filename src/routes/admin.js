@@ -178,8 +178,14 @@ router.get('/peminjaman', (req, res) => {
   res.render('admin/peminjaman', { title: 'Peminjaman', rows });
 });
 router.post('/peminjaman/:id/approve', (req, res) => {
-  const p = db.prepare('SELECT * FROM peminjaman WHERE id=?').get(req.params.id);
-  if (p && p.status==='menunggu') { db.prepare("UPDATE peminjaman SET status='dipinjam' WHERE id=?").run(p.id); db.prepare('UPDATE buku SET stok_tersedia=stok_tersedia-1 WHERE id=? AND stok_tersedia>0').run(p.buku_id); notifyUser(p.user_id,'Peminjaman Disetujui','Buku Anda sudah bisa diambil.','sukses'); }
+  const p = db.prepare('SELECT p.*, b.judul FROM peminjaman p JOIN buku b ON b.id=p.buku_id WHERE p.id=?').get(req.params.id);
+  if (p && p.status==='menunggu') {
+    db.prepare("UPDATE peminjaman SET status='dipinjam' WHERE id=?").run(p.id);
+    db.prepare('UPDATE buku SET stok_tersedia=stok_tersedia-1 WHERE id=? AND stok_tersedia>0').run(p.buku_id);
+    notifyUser(p.user_id, 'Peminjaman Disetujui',
+      `Buku "${p.judul}" telah dipinjamkan untuk Anda. Tanggal kembali: ${p.tanggal_kembali}. Silakan ambil di perpustakaan.`,
+      'sukses');
+  }
   req.flash('success','Disetujui.'); res.redirect('/admin/peminjaman');
 });
 router.post('/peminjaman/:id/reject', (req, res) => { db.prepare("UPDATE peminjaman SET status='ditolak' WHERE id=?").run(req.params.id); req.flash('success','Ditolak.'); res.redirect('/admin/peminjaman'); });
@@ -209,9 +215,12 @@ router.get('/kelas', (req, res) => {
   res.render('admin/kelas', { title: 'Manajemen Kelas', kelas, tutors });
 });
 router.post('/kelas', (req, res) => {
-  const { nama, subtest, deskripsi, tutor_id, kode } = req.body;
-  if (!nama || !nama.trim()) { req.flash('error','Nama kelas wajib.'); return res.redirect('/admin/kelas'); }
-  try { db.prepare('INSERT INTO kelas (nama,subtest,deskripsi,tutor_id,kode) VALUES (?,?,?,?,?)').run(nama.trim(),subtest||null,deskripsi,tutor_id,kode.toUpperCase()); req.flash('success','Kelas dibuat.'); }
+  var { nama, subtest, deskripsi, tutor_id, kode } = req.body;
+  nama = (nama || '').trim();
+  kode = (kode || '').trim().toUpperCase();
+  if (!nama) { req.flash('error','Nama kelas wajib diisi.'); return res.redirect('/admin/kelas'); }
+  if (!kode) { req.flash('error','Kode kelas wajib diisi.'); return res.redirect('/admin/kelas'); }
+  try { db.prepare('INSERT INTO kelas (nama,subtest,deskripsi,tutor_id,kode) VALUES (?,?,?,?,?)').run(nama, subtest||null, deskripsi||null, tutor_id, kode); req.flash('success','Kelas dibuat.'); }
   catch(e) { req.flash('error','Kode sudah ada atau tutor invalid.'); }
   res.redirect('/admin/kelas');
 });
@@ -227,7 +236,11 @@ router.get('/kelas/:id', (req, res) => {
   const allMurid = db.prepare("SELECT id,name,email,nomor_anggota FROM users WHERE role='murid' AND status='active' AND id NOT IN (SELECT user_id FROM kelas_member WHERE kelas_id=?)").all(kelas.id);
   const pertemuan = db.prepare('SELECT * FROM pertemuan WHERE kelas_id=? ORDER BY nomor').all(kelas.id);
   const materi = db.prepare('SELECT m.*,b.judul AS buku_judul FROM materi m LEFT JOIN buku b ON b.id=m.buku_id WHERE m.kelas_id=? ORDER BY m.created_at DESC').all(kelas.id);
-  res.render('admin/kelas-detail', { title: kelas.nama, kelas, members, allMurid, pertemuan, materi });
+  const bukuList = db.prepare('SELECT id,judul,penulis FROM buku ORDER BY judul').all();
+  const rekomendasi = db.prepare('SELECT r.*,b.judul,b.penulis FROM rekomendasi r JOIN buku b ON b.id=r.buku_id WHERE r.kelas_id=? ORDER BY r.created_at DESC').all(kelas.id);
+  const tugasList = db.prepare('SELECT * FROM ujian WHERE kelas_id=? ORDER BY created_at DESC').all(kelas.id);
+  const kelasLain = db.prepare("SELECT k.*,u.name AS tutor_name FROM kelas k JOIN users u ON u.id=k.tutor_id WHERE k.id!=? AND k.status='active' ORDER BY k.nama").all(kelas.id);
+  res.render('admin/kelas-detail', { title: kelas.nama, kelas, members, allMurid, pertemuan, materi, bukuList, rekomendasi, tugasList, kelasLain });
 });
 // Bulk add murid
 router.post('/kelas/:id/members', (req, res) => {
@@ -239,6 +252,48 @@ router.post('/kelas/:id/members', (req, res) => {
 router.delete('/kelas/:id/members/:uid', (req, res) => {
   db.prepare('DELETE FROM kelas_member WHERE kelas_id=? AND user_id=?').run(req.params.id, req.params.uid);
   req.flash('success','Murid dihapus dari kelas.'); res.redirect('/admin/kelas/' + req.params.id);
+});
+// Pertemuan
+router.post('/kelas/:id/pertemuan', (req, res) => {
+  const { nomor, judul, deskripsi, tanggal } = req.body;
+  db.prepare('INSERT INTO pertemuan (kelas_id,nomor,judul,deskripsi,tanggal) VALUES (?,?,?,?,?)').run(req.params.id, nomor, judul, deskripsi, tanggal||null);
+  req.flash('success','Pertemuan ditambahkan.'); res.redirect('/admin/kelas/'+req.params.id);
+});
+// Materi
+router.post('/kelas/:id/materi', upload.single('file'), (req, res) => {
+  const { judul, deskripsi, tipe, link, buku_id, pertemuan_id } = req.body;
+  db.prepare('INSERT INTO materi (kelas_id,pertemuan_id,tutor_id,judul,deskripsi,tipe,file,link,buku_id) VALUES (?,?,?,?,?,?,?,?,?)')
+    .run(req.params.id, pertemuan_id||null, req.session.user.id, judul, deskripsi, tipe||'link', req.file?.filename||null, link||null, buku_id||null);
+  req.flash('success','Materi ditambahkan.'); res.redirect('/admin/kelas/'+req.params.id);
+});
+// Rekomendasi
+router.post('/kelas/:id/rekomendasi', (req, res) => {
+  const { buku_id, catatan } = req.body;
+  db.prepare('INSERT INTO rekomendasi (tutor_id,buku_id,kelas_id,catatan) VALUES (?,?,?,?)').run(req.session.user.id, buku_id, req.params.id, catatan||null);
+  req.flash('success','Rekomendasi ditambahkan.'); res.redirect('/admin/kelas/'+req.params.id);
+});
+router.delete('/kelas/:id/rekomendasi/:rid', (req, res) => {
+  db.prepare('DELETE FROM rekomendasi WHERE id=? AND kelas_id=?').run(req.params.rid, req.params.id);
+  req.flash('success','Rekomendasi dihapus.'); res.redirect('/admin/kelas/'+req.params.id);
+});
+// Kirim materi & rekomendasi ke kelas lain
+router.post('/kelas/:id/kirim-materi', (req, res) => {
+  const sourceId = req.params.id;
+  const targets = Array.isArray(req.body.target_ids) ? req.body.target_ids : [req.body.target_ids].filter(Boolean);
+  if (targets.length === 0) { req.flash('error','Pilih kelas tujuan.'); return res.redirect('/admin/kelas/'+sourceId); }
+  let totalMat=0, totalRek=0;
+  if (req.body.include_materi) {
+    const source = db.prepare('SELECT * FROM materi WHERE kelas_id=?').all(sourceId);
+    const ins = db.prepare('INSERT INTO materi (kelas_id,tutor_id,judul,deskripsi,tipe,file,link,buku_id) VALUES (?,?,?,?,?,?,?,?)');
+    targets.forEach(t => source.forEach(m => { ins.run(t, req.session.user.id, m.judul, m.deskripsi, m.tipe, m.file, m.link, m.buku_id); totalMat++; }));
+  }
+  if (req.body.include_rekomendasi) {
+    const source = db.prepare('SELECT * FROM rekomendasi WHERE kelas_id=?').all(sourceId);
+    const ins = db.prepare('INSERT INTO rekomendasi (tutor_id,buku_id,kelas_id,catatan) VALUES (?,?,?,?)');
+    targets.forEach(t => source.forEach(r => { ins.run(req.session.user.id, r.buku_id, t, r.catatan); totalRek++; }));
+  }
+  req.flash('success', `Dikirim ke ${targets.length} kelas: ${totalMat} materi, ${totalRek} rekomendasi.`);
+  res.redirect('/admin/kelas/'+sourceId);
 });
 
 // ==================== BANK SOAL ====================
@@ -277,12 +332,12 @@ router.get('/bank-soal/export.xlsx', (req, res) => {
   res.setHeader('Content-Disposition','attachment; filename="bank-soal.xlsx"');
   res.send(buf);
 });
-// Import bank soal (Excel .xlsx/.xls atau CSV .csv)
-router.post('/bank-soal/import', upload.single('file'), (req, res) => {
+// Import bank soal (Excel .xlsx/.xls, CSV .csv, atau Word .docx)
+router.post('/bank-soal/import', upload.single('file'), async (req, res) => {
   if (!req.file) { req.flash('error','File wajib.'); return res.redirect('/admin/bank-soal'); }
   try {
     const { parseBankSoalFile } = require('../utils/bankSoalImport');
-    const { rows, errors } = parseBankSoalFile(req.file.path);
+    const { rows, errors } = await parseBankSoalFile(req.file.path);
     const stmt = db.prepare('INSERT INTO bank_soal (kelas_id,subtest,soal,tipe,opsi_json,jawaban_json,poin,penjelasan,created_by) VALUES (?,?,?,?,?,?,?,?,?)');
     const insertMany = db.transaction((items) => {
       let n = 0;
@@ -344,7 +399,18 @@ router.post('/ujian/:id/soal', (req, res) => {
   soalIds.forEach(sid => { urutan++; try { db.prepare('INSERT INTO ujian_soal (ujian_id,bank_soal_id,urutan) VALUES (?,?,?)').run(req.params.id,sid,urutan); } catch(e){} });
   req.flash('success',`${soalIds.length} soal ditambahkan.`); res.redirect('/admin/ujian/' + req.params.id + '/soal');
 });
-router.post('/ujian/:id/publish', (req, res) => { db.prepare("UPDATE ujian SET status='aktif' WHERE id=?").run(req.params.id); req.flash('success','Ujian dipublikasi.'); res.redirect('/admin/ujian'); });
+router.post('/ujian/:id/publish', (req, res) => {
+  db.prepare("UPDATE ujian SET status='aktif' WHERE id=?").run(req.params.id);
+  // Notify peserta kelas
+  const uj = db.prepare('SELECT * FROM ujian WHERE id=?').get(req.params.id);
+  if (uj && uj.kelas_id) {
+    const peserta = db.prepare('SELECT user_id FROM kelas_member WHERE kelas_id=?').all(uj.kelas_id);
+    peserta.forEach(p => {
+      notifyUser(p.user_id, 'Ujian/Tugas Baru', `Tutor mempublikasikan: ${uj.judul} (durasi ${uj.durasi_menit} menit). Cek tab Ujian Anda.`, 'info');
+    });
+  }
+  req.flash('success','Ujian dipublikasi.'); res.redirect('/admin/ujian');
+});
 router.get('/ujian/:id/hasil', (req, res) => {
   const uj = db.prepare('SELECT * FROM ujian WHERE id=?').get(req.params.id);
   const peserta = db.prepare('SELECT up.*,u.name FROM ujian_peserta up JOIN users u ON u.id=up.user_id WHERE up.ujian_id=? ORDER BY up.nilai DESC').all(req.params.id);

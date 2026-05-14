@@ -20,11 +20,11 @@
 <div class="card">
   <h3>Import Soal (Excel / CSV)</h3>
   <form method="POST" action="/tutor/bank-soal/import" enctype="multipart/form-data" class="row-flex" style="gap:8px;align-items:center;">
-    <input type="file" name="file" accept=".xlsx,.xls,.csv" class="form-control" required style="max-width:320px;"/>
+    <input type="file" name="file" accept=".xlsx,.xls,.csv,.docx" class="form-control" required style="max-width:320px;"/>
     <button class="btn btn-primary">Import</button>
   </form>
   <p class="text-muted" style="font-size:0.85rem;margin-top:6px;">
-    Kolom: <code>subtest, soal, tipe, opsi_json, jawaban_json, poin, penjelasan</code>. Download template untuk contoh format.
+    Kolom: <code>subtest, soal, tipe, opsi_json, jawaban_json, poin, penjelasan</code>. Format <code>.docx</code> juga didukung (lihat template). Download template untuk contoh.
   </p>
 </div>
 

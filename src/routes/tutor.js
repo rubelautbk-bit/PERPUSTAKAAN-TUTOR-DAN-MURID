@@ -179,13 +179,13 @@ router.get('/bank-soal/template.xlsx', (req, res) => {
   res.send(buf);
 });
 
-// Import bank soal (Excel .xlsx/.xls atau CSV .csv)
+// Import bank soal (Excel .xlsx/.xls, CSV .csv, atau Word .docx)
 // Kolom: subtest, soal, tipe, opsi_json, jawaban_json, poin, penjelasan
-router.post('/bank-soal/import', upload.single('file'), (req, res) => {
+router.post('/bank-soal/import', upload.single('file'), async (req, res) => {
   if (!req.file) { req.flash('error','File wajib.'); return res.redirect('/tutor/bank-soal'); }
   try {
     const { parseBankSoalFile } = require('../utils/bankSoalImport');
-    const { rows, errors } = parseBankSoalFile(req.file.path);
+    const { rows, errors } = await parseBankSoalFile(req.file.path);
     const stmt = db.prepare('INSERT INTO bank_soal (kelas_id,subtest,soal,tipe,opsi_json,jawaban_json,poin,penjelasan,created_by) VALUES (?,?,?,?,?,?,?,?,?)');
     const insertMany = db.transaction((items) => {
       let n = 0;
@@ -227,7 +227,17 @@ router.post('/ujian/:id/soal', (req, res) => {
   soalIds.forEach(sid => { urutan++; try { db.prepare('INSERT INTO ujian_soal (ujian_id,bank_soal_id,urutan) VALUES (?,?,?)').run(req.params.id,sid,urutan); } catch(e){} });
   req.flash('success',`${soalIds.length} soal ditambahkan.`); res.redirect('/tutor/ujian/'+req.params.id+'/soal');
 });
-router.post('/ujian/:id/publish', (req, res) => { db.prepare("UPDATE ujian SET status='aktif' WHERE id=?").run(req.params.id); req.flash('success','Dipublikasi.'); res.redirect('/tutor/ujian'); });
+router.post('/ujian/:id/publish', (req, res) => {
+  db.prepare("UPDATE ujian SET status='aktif' WHERE id=?").run(req.params.id);
+  const uj = db.prepare('SELECT * FROM ujian WHERE id=?').get(req.params.id);
+  if (uj && uj.kelas_id) {
+    const peserta = db.prepare('SELECT user_id FROM kelas_member WHERE kelas_id=?').all(uj.kelas_id);
+    peserta.forEach(p => {
+      notifyUser(p.user_id, 'Ujian/Tugas Baru', `Tutor mempublikasikan: ${uj.judul} (durasi ${uj.durasi_menit} menit). Cek tab Ujian Anda.`, 'info');
+    });
+  }
+  req.flash('success','Dipublikasi.'); res.redirect('/tutor/ujian');
+});
 router.get('/ujian/:id/hasil', (req, res) => {
   const uj = db.prepare('SELECT * FROM ujian WHERE id=?').get(req.params.id);
   const peserta = db.prepare('SELECT up.*,u.name FROM ujian_peserta up JOIN users u ON u.id=up.user_id WHERE up.ujian_id=? ORDER BY up.nilai DESC').all(req.params.id);

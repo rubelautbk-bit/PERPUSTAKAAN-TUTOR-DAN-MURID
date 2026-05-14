@@ -27,7 +27,7 @@
   });
 })();
 
-// Sidebar scroll position persist (biar tidak balik ke atas setelah refresh)
+// Sidebar scroll position persist (biar tidak balik ke atas setelah refresh/navigasi)
 (function() {
   const sb = document.querySelector('.sidebar');
   if (!sb) return;
@@ -37,19 +37,22 @@
   sb.addEventListener('scroll', function() {
     sessionStorage.setItem(key, sb.scrollTop);
   });
+  // Snapshot scroll position tepat sebelum klik link (jaga-jaga jika scroll event terlewat)
+  sb.querySelectorAll('a').forEach(function(a) {
+    a.addEventListener('click', function() {
+      sessionStorage.setItem(key, sb.scrollTop);
+    });
+  });
 })();
 
-// Auto-scroll sidebar ke menu yang sedang aktif (agar terlihat tanpa harus scroll manual)
+// Auto-scroll sidebar ke menu yang sedang aktif HANYA pada kunjungan pertama (tidak ada scroll tersimpan)
 (function() {
   const active = document.querySelector('.sidebar a.active');
-  if (active) {
-    const sb = document.querySelector('.sidebar');
-    // Kalau tidak ada scroll position tersimpan, auto-scroll ke active item
-    if (!sessionStorage.getItem('sidebarScroll')) {
-      const offset = active.offsetTop - 60;
-      if (sb && offset > 100) sb.scrollTop = offset;
-    }
-  }
+  if (!active) return;
+  if (sessionStorage.getItem('sidebarScroll') !== null) return; // jangan override scroll user
+  const sb = document.querySelector('.sidebar');
+  const offset = active.offsetTop - 60;
+  if (sb && offset > 100) sb.scrollTop = offset;
 })();
 
 // Auto hide alert
