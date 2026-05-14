@@ -1,1 +1,37 @@
-<div class="page-header"><h1>Chat Rooms</h1></div><div class="card"><% rooms.forEach(r=>{ %><div style="padding:8px 0;border-bottom:1px solid var(--border);"><strong><%= r.nama||('Room '+r.id) %></strong> (<%= r.members %> anggota)</div><% }) %><% if(!rooms.length) { %><p class="text-muted">Belum ada chat room.</p><% } %></div>
+<div class="page-header"><h1>Chat</h1></div>
+<div class="grid-2">
+  <div class="card">
+    <h3>Mulai Chat Individual</h3>
+    <p class="text-muted" style="font-size:0.9rem;">Pilih user untuk memulai chat privat.</p>
+    <% var allUsers = typeof users !== 'undefined' ? users : []; %>
+    <div style="max-height:350px; overflow-y:auto; border:1px solid var(--border); border-radius:8px; padding:8px;">
+      <input type="text" id="searchUser" class="form-control" placeholder="Cari nama..." oninput="filterUsers()" style="margin-bottom:8px;"/>
+      <% allUsers.forEach(function(u) { %>
+        <div class="user-item" style="display:flex; justify-content:space-between; align-items:center; padding:8px; border-bottom:1px solid var(--border);">
+          <div>
+            <strong><%= u.name %></strong>
+            <span class="badge" style="font-size:0.75rem;"><%= u.role %></span>
+            <div class="text-muted" style="font-size:0.82rem;"><%= u.email %></div>
+          </div>
+          <form method="POST" action="/admin/chat/start/<%= u.id %>">
+            <button class="btn btn-sm btn-primary">Chat</button>
+          </form>
+        </div>
+      <% }) %>
+      <% if (!allUsers.length) { %><p class="text-muted">Tidak ada user.</p><% } %>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Percakapan Aktif (<%= rooms.length %>)</h3>
+    <% rooms.forEach(function(r) { %>
+      <div style="padding:10px 0; border-bottom:1px solid var(--border);">
+        <a href="/admin/chat/<%= r.id %>" style="font-weight:600; color:var(--text);"><%= r.nama || ('Chat #' + r.id) %></a>
+        <span class="text-muted" style="font-size:0.82rem;">(<%= r.members %> anggota)</span>
+      </div>
+    <% }) %>
+    <% if (!rooms.length) { %><p class="text-muted">Belum ada percakapan.</p><% } %>
+  </div>
+</div>
+<script>
+function filterUsers(){var q=document.getElementById('searchUser').value.toLowerCase();document.querySelectorAll('.user-item').forEach(function(el){el.style.display=el.textContent.toLowerCase().includes(q)?'':'none';});}
+</script>

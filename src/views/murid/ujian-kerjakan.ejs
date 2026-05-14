@@ -157,6 +157,7 @@ if (antiCheat) {
   }
   document.addEventListener('visibilitychange', () => { if (document.hidden) rapor(); });
   window.addEventListener('blur', rapor);
+  window.addEventListener('beforeunload', function(e) { e.preventDefault(); e.returnValue = 'Ujian sedang berlangsung!'; });
   document.addEventListener('contextmenu', e => e.preventDefault());
   document.addEventListener('keydown', e => {
     if (e.ctrlKey && ['c','v','u','p','s'].includes(e.key.toLowerCase())) e.preventDefault();

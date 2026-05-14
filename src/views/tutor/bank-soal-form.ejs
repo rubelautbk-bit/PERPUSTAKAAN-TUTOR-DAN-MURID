@@ -1,7 +1,7 @@
 <div class="page-header">
   <div>
     <a href="/tutor/bank-soal" class="text-muted">&larr; Bank Soal</a>
-    <h1>Tambah Soal</h1>
+    <h1><%= (typeof s !== 'undefined' && s) ? 'Edit Soal #'+s.id : 'Tambah Soal' %></h1>
   </div>
 </div>
 
@@ -17,7 +17,8 @@
   </ul>
 </div>
 
-<form method="POST" action="/tutor/bank-soal" class="card" id="formSoal">
+<% var _s = (typeof s !== 'undefined') ? s : null; %>
+<form method="POST" action="/tutor/bank-soal<%= _s ? '/'+_s.id+'?_method=PUT' : '' %>" class="card" id="formSoal">
   <div class="form-row">
     <div class="form-group">
       <label>Subtest *</label>

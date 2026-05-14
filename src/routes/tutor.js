@@ -79,13 +79,16 @@ router.delete('/kelas/:id/rekomendasi/:rid', (req, res) => {
 router.post('/kelas/:id/kirim-materi', (req, res) => {
   const sourceId = req.params.id;
   const targets = Array.isArray(req.body.target_ids) ? req.body.target_ids : [req.body.target_ids].filter(Boolean);
-  const includeMat = !!req.body.include_materi;
+  const includeMat = !!(req.body.include_materi || req.body.materi_ids);
   const includeRek = !!req.body.include_rekomendasi;
   if (targets.length === 0) { req.flash('error','Pilih kelas tujuan.'); return res.redirect('/tutor/kelas/'+sourceId); }
 
   let totalMat=0, totalRek=0;
   if (includeMat) {
-    const source = db.prepare('SELECT * FROM materi WHERE kelas_id=?').all(sourceId);
+    const matIds = req.body.materi_ids ? (Array.isArray(req.body.materi_ids) ? req.body.materi_ids : [req.body.materi_ids]) : null;
+    const source = matIds
+      ? db.prepare('SELECT * FROM materi WHERE kelas_id=? AND id IN (' + matIds.map(()=>'?').join(',') + ')').all(sourceId, ...matIds)
+      : db.prepare('SELECT * FROM materi WHERE kelas_id=?').all(sourceId);
     const ins = db.prepare('INSERT INTO materi (kelas_id,tutor_id,judul,deskripsi,tipe,file,link,buku_id) VALUES (?,?,?,?,?,?,?,?)');
     targets.forEach(t => { source.forEach(m => { ins.run(t, req.session.user.id, m.judul, m.deskripsi, m.tipe, m.file, m.link, m.buku_id); totalMat++; }); });
   }
@@ -149,6 +152,18 @@ router.post('/bank-soal', (req, res) => {
   req.flash('success','Soal ditambahkan.'); res.redirect('/tutor/bank-soal?subtest='+(subtest||''));
 });
 router.delete('/bank-soal/:id', (req, res) => { db.prepare('DELETE FROM bank_soal WHERE id=?').run(req.params.id); req.flash('success','Dihapus.'); res.redirect('/tutor/bank-soal'); });
+// Detail & Edit soal
+router.get('/bank-soal/:id', (req, res) => {
+  const s = db.prepare('SELECT * FROM bank_soal WHERE id=?').get(req.params.id);
+  if (!s) return res.redirect('/tutor/bank-soal');
+  res.render('tutor/bank-soal-form', { title: 'Edit Soal', s, subtest: s.subtest, subtests: ['PU','PPU','PBM','PK','LBI','LBE','PM'] });
+});
+router.put('/bank-soal/:id', (req, res) => {
+  const { subtest, soal, tipe, opsi_json, jawaban_json, poin, penjelasan, kelas_id } = req.body;
+  db.prepare('UPDATE bank_soal SET kelas_id=?,subtest=?,soal=?,tipe=?,opsi_json=?,jawaban_json=?,poin=?,penjelasan=? WHERE id=?')
+    .run(kelas_id||null, subtest, soal, tipe||'pg', opsi_json||'[]', jawaban_json||'""', poin||1, penjelasan||null, req.params.id);
+  req.flash('success','Soal diperbarui.'); res.redirect('/tutor/bank-soal?subtest='+(subtest||''));
+});
 
 // Export bank soal (Excel)
 router.get('/bank-soal/export.xlsx', (req, res) => {
@@ -237,6 +252,10 @@ router.post('/ujian/:id/publish', (req, res) => {
     });
   }
   req.flash('success','Dipublikasi.'); res.redirect('/tutor/ujian');
+});
+router.post('/ujian/:id/tunda', (req, res) => {
+  db.prepare("UPDATE ujian SET status='draft' WHERE id=?").run(req.params.id);
+  req.flash('success','Ujian ditunda (kembali ke draft).'); res.redirect('/tutor/ujian');
 });
 router.get('/ujian/:id/hasil', (req, res) => {
   const uj = db.prepare('SELECT * FROM ujian WHERE id=?').get(req.params.id);
@@ -402,7 +421,22 @@ router.post('/forum/:id/komentar', (req, res) => { db.prepare('INSERT INTO forum
 
 router.get('/chat', (req, res) => {
   const rooms = db.prepare('SELECT cr.* FROM chat_room cr JOIN chat_member cm ON cm.room_id=cr.id WHERE cm.user_id=? ORDER BY cr.created_at DESC').all(req.session.user.id);
-  res.render('tutor/chat', { title: 'Chat', rooms });
+  const users = db.prepare("SELECT id,name,email,role FROM users WHERE status='active' AND id!=? ORDER BY role,name").all(req.session.user.id);
+  res.render('tutor/chat', { title: 'Chat', rooms, users });
+});
+
+// Kalender
+router.get('/kalender', (req, res) => {
+  const events = db.prepare('SELECT * FROM kalender ORDER BY tanggal_mulai DESC').all();
+  res.render('tutor/kalender', { title: 'Kalender Kegiatan', events });
+});
+router.post('/kalender', (req, res) => {
+  db.prepare('INSERT INTO kalender (judul,deskripsi,tipe,tanggal_mulai,tanggal_selesai,kelas_id,created_by) VALUES (?,?,?,?,?,?,?)').run(req.body.judul,req.body.deskripsi||null,req.body.tipe||'event',req.body.tanggal_mulai,req.body.tanggal_selesai||null,req.body.kelas_id||null,req.session.user.id);
+  req.flash('success','Event ditambahkan.'); res.redirect('/tutor/kalender');
+});
+router.delete('/kalender/:id', (req, res) => {
+  db.prepare('DELETE FROM kalender WHERE id=?').run(req.params.id);
+  req.flash('success','Dihapus.'); res.redirect('/tutor/kalender');
 });
 
 // Rekap
@@ -411,7 +445,10 @@ router.get('/rekap', (req, res) => {
   const totalMurid = db.prepare('SELECT COUNT(DISTINCT km.user_id) c FROM kelas_member km JOIN kelas k ON k.id=km.kelas_id WHERE k.tutor_id=?').get(tid).c;
   const totalUjian = db.prepare('SELECT COUNT(*) c FROM ujian WHERE created_by=?').get(tid).c;
   const avgNilai = db.prepare("SELECT AVG(up.nilai) a FROM ujian_peserta up JOIN ujian uj ON uj.id=up.ujian_id WHERE uj.created_by=? AND up.status='selesai'").get(tid)?.a || 0;
-  res.render('tutor/rekap', { title: 'Rekap', totalMurid, totalUjian, avgNilai: Math.round(avgNilai) });
+  const totalPertemuan = db.prepare('SELECT COUNT(*) c FROM pertemuan WHERE kelas_id IN (SELECT id FROM kelas WHERE tutor_id=?)').get(tid).c;
+  const muridList = db.prepare("SELECT DISTINCT u.name,u.email,k.nama AS kelas_nama FROM kelas_member km JOIN users u ON u.id=km.user_id JOIN kelas k ON k.id=km.kelas_id WHERE k.tutor_id=? ORDER BY k.nama,u.name").all(tid);
+  const hasilUjian = db.prepare("SELECT u.name,uj.judul,up.nilai FROM ujian_peserta up JOIN users u ON u.id=up.user_id JOIN ujian uj ON uj.id=up.ujian_id WHERE uj.created_by=? AND up.status='selesai' ORDER BY up.selesai_at DESC LIMIT 20").all(tid);
+  res.render('tutor/rekap', { title: 'Rekap', totalMurid, totalUjian, avgNilai: Math.round(avgNilai), totalPertemuan, muridList, hasilUjian });
 });
 
 // ==================== CHAT INDIVIDUAL ====================

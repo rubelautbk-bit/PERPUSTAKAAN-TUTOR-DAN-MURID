@@ -80,12 +80,13 @@ var _kelasLain   = (typeof kelasLain   !== 'undefined' && kelasLain)   ? kelasLa
         <div class="form-group"><label>Deskripsi</label><textarea name="deskripsi" class="form-control" rows="2"></textarea></div>
         <div class="form-group">
           <label>Pilih Buku dari Katalog (opsional)</label>
-          <select name="buku_id" class="form-control">
-            <option value="">-- Tidak pakai buku --</option>
+          <input type="text" list="bukuDatalist" class="form-control" placeholder="Ketik judul buku..." oninput="var sel=this.list.querySelector('option[value=\x27'+this.value+'\x27]');this.form.querySelector('[name=buku_id]').value=sel?sel.dataset.id:'';" />
+          <input type="hidden" name="buku_id"/>
+          <datalist id="bukuDatalist">
             <% _bukuList.forEach(function(b) { %>
-              <option value="<%= b.id %>"><%= b.judul %><% if(b.penulis){ %> - <%= b.penulis %><% } %></option>
+              <option value="<%= b.judul %><%= b.penulis?' - '+b.penulis:'' %>" data-id="<%= b.id %>"></option>
             <% }) %>
-          </select>
+          </datalist>
         </div>
         <div class="form-group"><label>Link Eksternal (opsional)</label><input type="url" name="link" class="form-control" placeholder="https://..."/></div>
         <div class="form-group"><label>Upload File (opsional)</label><input type="file" name="file" class="form-control"/></div>
@@ -126,12 +127,13 @@ var _kelasLain   = (typeof kelasLain   !== 'undefined' && kelasLain)   ? kelasLa
       <form method="POST" action="/admin/kelas/<%= kelas.id %>/rekomendasi">
         <div class="form-group">
           <label>Pilih Buku</label>
-          <select name="buku_id" class="form-control" required>
-            <option value="">-- Pilih dari katalog --</option>
+          <input type="text" list="bukuDatalistRek" class="form-control" placeholder="Ketik judul buku..." required oninput="var sel=this.list.querySelector('option[value=\x27'+this.value+'\x27]');this.form.querySelector('[name=buku_id]').value=sel?sel.dataset.id:'';" />
+          <input type="hidden" name="buku_id"/>
+          <datalist id="bukuDatalistRek">
             <% _bukuList.forEach(function(b) { %>
-              <option value="<%= b.id %>"><%= b.judul %><% if(b.penulis){ %> - <%= b.penulis %><% } %></option>
+              <option value="<%= b.judul %><%= b.penulis?' - '+b.penulis:'' %>" data-id="<%= b.id %>"></option>
             <% }) %>
-          </select>
+          </datalist>
         </div>
         <div class="form-group"><label>Catatan</label><textarea name="catatan" class="form-control" rows="2"></textarea></div>
         <button class="btn btn-primary">Tambah Rekomendasi</button>

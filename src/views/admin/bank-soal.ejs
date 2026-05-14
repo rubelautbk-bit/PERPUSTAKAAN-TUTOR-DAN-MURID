@@ -56,9 +56,12 @@
           <td><%= s.subtest %></td>
           <td><%= s.poin %></td>
           <td>
-            <form method="POST" action="/admin/bank-soal/<%= s.id %>?_method=DELETE" onsubmit="return confirm('Hapus soal?')">
-              <button class="btn btn-sm btn-danger">X</button>
-            </form>
+            <div class="row-flex" style="gap:4px;">
+              <a href="/admin/bank-soal/<%= s.id %>" class="btn btn-sm btn-secondary">Edit</a>
+              <form method="POST" action="/admin/bank-soal/<%= s.id %>?_method=DELETE" onsubmit="return confirm('Hapus soal?')">
+                <button class="btn btn-sm btn-danger">X</button>
+              </form>
+            </div>
           </td>
         </tr>
       <% }) %>

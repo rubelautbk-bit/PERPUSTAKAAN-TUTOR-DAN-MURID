@@ -321,6 +321,18 @@ router.post('/bank-soal/bulk-poin', (req, res) => {
   req.flash('success',`Poin semua soal ${subtest} diubah ke ${poin}.`); res.redirect('/admin/bank-soal?subtest='+subtest);
 });
 router.delete('/bank-soal/:id', (req, res) => { db.prepare('DELETE FROM bank_soal WHERE id=?').run(req.params.id); req.flash('success','Soal dihapus.'); res.redirect('/admin/bank-soal'); });
+// Detail & Edit soal
+router.get('/bank-soal/:id', (req, res) => {
+  const s = db.prepare('SELECT * FROM bank_soal WHERE id=?').get(req.params.id);
+  if (!s) return res.redirect('/admin/bank-soal');
+  res.render('admin/bank-soal-form', { title: 'Edit Soal', s, subtest: s.subtest, subtests: ['PU','PPU','PBM','PK','LBI','LBE','PM'] });
+});
+router.put('/bank-soal/:id', (req, res) => {
+  const { subtest, soal, tipe, opsi_json, jawaban_json, poin, penjelasan, kelas_id } = req.body;
+  db.prepare('UPDATE bank_soal SET kelas_id=?,subtest=?,soal=?,tipe=?,opsi_json=?,jawaban_json=?,poin=?,penjelasan=? WHERE id=?')
+    .run(kelas_id||null, subtest, soal, tipe||'pg', opsi_json||'[]', jawaban_json||'""', poin||1, penjelasan||null, req.params.id);
+  req.flash('success','Soal diperbarui.'); res.redirect('/admin/bank-soal?subtest='+(subtest||''));
+});
 // Export bank soal
 router.get('/bank-soal/export.xlsx', (req, res) => {
   const { subtest } = req.query;
@@ -474,7 +486,28 @@ router.post('/settings', (req, res) => {
 // ==================== CHAT ====================
 router.get('/chat', (req, res) => {
   const rooms = db.prepare('SELECT cr.*,(SELECT COUNT(*) FROM chat_member WHERE room_id=cr.id) members FROM chat_room cr ORDER BY cr.created_at DESC').all();
-  res.render('admin/chat', { title: 'Chat', rooms });
+  const users = db.prepare("SELECT id,name,email,role FROM users WHERE status='active' AND id!=? ORDER BY role,name").all(req.session.user.id);
+  res.render('admin/chat', { title: 'Chat', rooms, users });
+});
+router.post('/chat/start/:userId', (req, res) => {
+  const uid = req.session.user.id;
+  const lawanId = parseInt(req.params.userId);
+  if (lawanId === uid) return res.redirect('/admin/chat');
+  const existing = db.prepare(`SELECT cr.id FROM chat_room cr JOIN chat_member cm1 ON cm1.room_id=cr.id AND cm1.user_id=? JOIN chat_member cm2 ON cm2.room_id=cr.id AND cm2.user_id=? WHERE cr.tipe='private' LIMIT 1`).get(uid, lawanId);
+  let roomId;
+  if (existing) { roomId = existing.id; }
+  else {
+    const info = db.prepare("INSERT INTO chat_room (tipe) VALUES ('private')").run();
+    roomId = info.lastInsertRowid;
+    db.prepare('INSERT INTO chat_member (room_id,user_id) VALUES (?,?)').run(roomId, uid);
+    db.prepare('INSERT INTO chat_member (room_id,user_id) VALUES (?,?)').run(roomId, lawanId);
+  }
+  res.redirect('/admin/chat/' + roomId);
+});
+router.get('/chat/:roomId', (req, res) => {
+  const room = db.prepare('SELECT * FROM chat_room WHERE id=?').get(req.params.roomId);
+  const messages = db.prepare('SELECT cm.*,u.name FROM chat_message cm JOIN users u ON u.id=cm.user_id WHERE cm.room_id=? ORDER BY cm.created_at').all(req.params.roomId);
+  res.render('admin/chat-room', { title: room?.nama||'Chat', room, messages });
 });
 
 // ==================== WHATSAPP GATEWAY (admin) ====================

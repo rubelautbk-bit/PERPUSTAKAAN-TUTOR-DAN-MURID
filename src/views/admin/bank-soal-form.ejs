@@ -1,7 +1,7 @@
 <div class="page-header">
   <div>
     <a href="/admin/bank-soal" class="text-muted">&larr; Bank Soal</a>
-    <h1>Tambah Soal</h1>
+    <h1><%= s ? 'Edit Soal #'+s.id : 'Tambah Soal' %></h1>
   </div>
 </div>
 
@@ -17,7 +17,7 @@
   </ul>
 </div>
 
-<form method="POST" action="/admin/bank-soal" class="card" id="formSoal">
+<form method="POST" action="/admin/bank-soal<%= s ? '/'+s.id+'?_method=PUT' : '' %>" class="card" id="formSoal">
   <div class="form-row">
     <div class="form-group">
       <label>Subtest *</label>
@@ -180,6 +180,38 @@ function renderPreview() {
 }
 document.querySelector('textarea[name="soal"]').addEventListener('input', renderPreview);
 setTimeout(renderPreview, 300);
+
+// Pre-fill for edit mode
+<% if (s) { %>
+(function() {
+  document.getElementById('tipe').value = '<%= s.tipe %>';
+  onTipeChange();
+  document.querySelector('textarea[name="soal"]').value = <%- JSON.stringify(s.soal||'') %>;
+  document.querySelector('textarea[name="penjelasan"]').value = <%- JSON.stringify(s.penjelasan||'') %>;
+  document.querySelector('input[name="poin"]').value = '<%= s.poin %>';
+  try {
+    var opsi = JSON.parse(<%- JSON.stringify(s.opsi_json||'[]') %>);
+    var list = document.getElementById('opsiList');
+    list.innerHTML = '';
+    opsi.forEach(function(o, i) {
+      var letter = String.fromCharCode(65+i);
+      var row = document.createElement('div');
+      row.className='opsi-row row-flex'; row.style.cssText='margin-bottom:6px;align-items:center;';
+      row.innerHTML='<span class="badge">'+letter+'</span><input type="text" class="form-control opsi-input" data-letter="'+letter+'" value=""/>';
+      list.appendChild(row);
+      row.querySelector('input').value = o;
+    });
+  } catch(e){}
+  try {
+    var jawaban = JSON.parse(<%- JSON.stringify(s.jawaban_json||'""') %>);
+    if ('<%= s.tipe %>' === 'pg') document.getElementById('jawabanSelect').value = jawaban;
+    else if ('<%= s.tipe %>' === 'benar_salah') { var r=document.querySelector('input[name="bs_ans"][value="'+jawaban+'"]'); if(r)r.checked=true; }
+    else if (Array.isArray(jawaban)) jawaban.forEach(function(v){var c=document.querySelector('.ans-multi[value="'+v+'"]');if(c)c.checked=true;});
+    else if (typeof jawaban === 'string') document.getElementById('jawabanText').value = jawaban;
+  } catch(e){}
+  renderPreview();
+})();
+<% } %>
 
 // Collect data before submit
 document.getElementById('formSoal').addEventListener('submit', function(e) {

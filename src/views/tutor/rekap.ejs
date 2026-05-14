@@ -1,1 +1,34 @@
-<div class="page-header"><h1>Rekapitulasi</h1></div><div class="stat-grid"><div class="stat"><div class="label">Total Murid</div><div class="value"><%=totalMurid%></div></div><div class="stat blue"><div class="label">Total Ujian</div><div class="value"><%=totalUjian%></div></div><div class="stat accent"><div class="label">Rata-rata Nilai</div><div class="value"><%=avgNilai%>%</div></div></div>
+<div class="page-header"><h1>Rekapitulasi</h1></div>
+<div class="stat-grid">
+  <div class="stat"><div class="label">Total Murid</div><div class="value"><%=totalMurid%></div></div>
+  <div class="stat blue"><div class="label">Total Ujian</div><div class="value"><%=totalUjian%></div></div>
+  <div class="stat accent"><div class="label">Rata-rata Nilai</div><div class="value"><%=avgNilai%>%</div></div>
+  <div class="stat"><div class="label">Total Pertemuan</div><div class="value"><%=totalPertemuan%></div></div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <h3>Daftar Murid Saya</h3>
+    <table class="tbl">
+      <thead><tr><th>#</th><th>Nama</th><th>Email</th><th>Kelas</th></tr></thead>
+      <tbody>
+        <% muridList.forEach(function(m, i) { %>
+          <tr><td><%= i+1 %></td><td><%= m.name %></td><td><%= m.email %></td><td><%= m.kelas_nama %></td></tr>
+        <% }) %>
+        <% if (!muridList.length) { %><tr><td colspan="4" class="text-muted text-center">Belum ada murid.</td></tr><% } %>
+      </tbody>
+    </table>
+  </div>
+  <div class="card">
+    <h3>Hasil Ujian Terakhir</h3>
+    <table class="tbl">
+      <thead><tr><th>Murid</th><th>Ujian</th><th>Nilai</th></tr></thead>
+      <tbody>
+        <% hasilUjian.forEach(function(h) { %>
+          <tr><td><%= h.name %></td><td><%= h.judul %></td><td><strong><%= h.nilai %>%</strong></td></tr>
+        <% }) %>
+        <% if (!hasilUjian.length) { %><tr><td colspan="3" class="text-muted text-center">Belum ada hasil.</td></tr><% } %>
+      </tbody>
+    </table>
+  </div>
+</div>

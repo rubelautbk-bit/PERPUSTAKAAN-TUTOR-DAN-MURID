@@ -284,7 +284,8 @@ router.post('/forum/:id/komentar', (req, res) => { db.prepare('INSERT INTO forum
 router.get('/chat', (req, res) => {
   const uid = req.session.user.id;
   const rooms = db.prepare('SELECT cr.*,(SELECT pesan FROM chat_message WHERE room_id=cr.id ORDER BY id DESC LIMIT 1) last_msg FROM chat_room cr JOIN chat_member cm ON cm.room_id=cr.id WHERE cm.user_id=? ORDER BY cr.created_at DESC').all(uid);
-  res.render('murid/chat', { title: 'Chat', rooms });
+  const users = db.prepare("SELECT id,name,email,role FROM users WHERE status='active' AND id!=? ORDER BY role,name").all(uid);
+  res.render('murid/chat', { title: 'Chat', rooms, users });
 });
 router.get('/chat/:roomId', (req, res) => {
   const uid = req.session.user.id;
