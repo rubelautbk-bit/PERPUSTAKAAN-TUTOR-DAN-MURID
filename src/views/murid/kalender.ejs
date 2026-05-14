@@ -1,1 +1,42 @@
-<div class="page-header"><h1>Kalender Kegiatan</h1></div><div class="card"><%events.forEach(e=>{%><div style="padding:10px 0;border-bottom:1px solid var(--border)"><span class="badge"><%=e.tipe%></span> <strong><%=e.judul%></strong><div class="text-muted" style="font-size:0.85rem"><%=e.tanggal_mulai%><%if(e.deskripsi){%> - <%=e.deskripsi%><%}%></div></div><%})%><%if(!events.length){%><p class="text-muted">Tidak ada jadwal.</p><%}%></div>
+<%
+function fmtDt(s) {
+  if (!s) return '-';
+  var d = new Date(String(s).replace(' ', 'T'));
+  if (isNaN(d.getTime())) return s;
+  var b = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
+  var pad = function(n){ n=String(n); return n.length<2?'0'+n:n; };
+  return pad(d.getDate()) + ' ' + b[d.getMonth()] + ' ' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
+function durasi(a, b) {
+  if (!a || !b) return '';
+  var d1 = new Date(String(a).replace(' ','T')); var d2 = new Date(String(b).replace(' ','T'));
+  if (isNaN(d1) || isNaN(d2)) return '';
+  var diff = (d2 - d1) / 60000; if (diff <= 0) return '';
+  if (diff < 60) return Math.round(diff) + ' menit';
+  var h = Math.floor(diff/60), m = Math.round(diff%60);
+  if (diff < 60*24) return h + ' jam' + (m?(' '+m+' mnt'):'');
+  var dd = Math.floor(diff/(60*24));
+  return dd + ' hari' + (h%24?(' '+(h%24)+' jam'):'');
+}
+%>
+<div class="page-header">
+  <div><h1>Kalender Kegiatan</h1><p class="subtitle"><%= events.length %> jadwal/kegiatan</p></div>
+</div>
+
+<div class="card">
+  <% events.forEach(function(e){ %>
+    <div style="padding:10px 0; border-bottom:1px solid var(--border);">
+      <span class="badge"><%= e.tipe %></span>
+      <strong><%= e.judul %></strong>
+      <div style="margin-top:6px; font-size:0.86rem;">
+        <span class="badge blue">&#9202; Mulai</span> <%= fmtDt(e.tanggal_mulai) %><br/>
+        <span class="badge red">&#9202; Selesai</span> <%= fmtDt(e.tanggal_selesai) %>
+        <% if (e.tanggal_selesai) { var d = durasi(e.tanggal_mulai, e.tanggal_selesai); if (d) { %>
+          <span class="text-muted">(<%= d %>)</span>
+        <% } } %>
+      </div>
+      <% if (e.deskripsi) { %><div style="font-size:0.88rem; margin-top:4px;"><%= e.deskripsi %></div><% } %>
+    </div>
+  <% }) %>
+  <% if (!events.length) { %><p class="text-muted">Tidak ada jadwal.</p><% } %>
+</div>
