@@ -234,8 +234,8 @@ router.get('/ujian', (req, res) => {
 });
 router.get('/ujian/new', (req, res) => { res.render('tutor/ujian-form', { title: 'Buat Ujian', uj: null, kelas: db.prepare('SELECT id,nama FROM kelas WHERE tutor_id=?').all(req.session.user.id) }); });
 router.post('/ujian', (req, res) => {
-  const { judul,deskripsi,tipe,kelas_id,durasi_menit,waktu_mulai,waktu_selesai,acak_soal,acak_opsi,poin_negatif,timer_per_soal,anti_cheat } = req.body;
-  const info = db.prepare('INSERT INTO ujian (judul,deskripsi,tipe,kelas_id,created_by,durasi_menit,waktu_mulai,waktu_selesai,acak_soal,acak_opsi,poin_negatif,timer_per_soal,anti_cheat,status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(judul,deskripsi,tipe||'kuis',kelas_id||null,req.session.user.id,durasi_menit||60,waktu_mulai||null,waktu_selesai||null,acak_soal?1:0,acak_opsi?1:0,poin_negatif||0,timer_per_soal||0,anti_cheat?1:0,'draft');
+  const { judul,deskripsi,tipe,kelas_id,durasi_menit,waktu_mulai,waktu_selesai,acak_soal,acak_opsi,poin_negatif,timer_per_soal,anti_cheat,scope,scope_subtest } = req.body;
+  const info = db.prepare('INSERT INTO ujian (judul,deskripsi,tipe,kelas_id,created_by,durasi_menit,waktu_mulai,waktu_selesai,acak_soal,acak_opsi,poin_negatif,timer_per_soal,anti_cheat,status,scope,scope_subtest) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').run(judul,deskripsi,tipe||'kuis',kelas_id||null,req.session.user.id,durasi_menit||60,waktu_mulai||null,waktu_selesai||null,acak_soal?1:0,acak_opsi?1:0,poin_negatif||0,timer_per_soal||0,anti_cheat?1:0,'draft',scope||'kelas',scope_subtest||null);
   req.flash('success','Ujian dibuat.'); res.redirect('/tutor/ujian/'+info.lastInsertRowid+'/soal');
 });
 router.get('/ujian/:id/soal', (req, res) => {
@@ -317,6 +317,7 @@ router.post('/peminjaman/:id/return', (req, res) => {
 router.post('/peminjaman/:id/perpanjang', (req, res) => {
   const p = db.prepare('SELECT * FROM peminjaman WHERE id=? AND user_id=?').get(req.params.id, req.session.user.id);
   if (p && p.status === 'dipinjam') {
+    if (p.perpanjangan >= 2) { req.flash('error','Perpanjangan maksimal 2 kali. Silakan lakukan peminjaman kembali.'); return res.redirect('/tutor/peminjaman'); }
     const d = new Date(p.tanggal_kembali); d.setDate(d.getDate()+7);
     db.prepare('UPDATE peminjaman SET tanggal_kembali=?,perpanjangan=perpanjangan+1 WHERE id=?').run(d.toISOString().slice(0,10), p.id);
     req.flash('success', `Diperpanjang 7 hari (${d.toISOString().slice(0,10)}).`);

@@ -51,17 +51,21 @@ router.post('/pinjam/:bukuId', (req, res) => {
   const uid = req.session.user.id;
   const buku = db.prepare('SELECT * FROM buku WHERE id=?').get(req.params.bukuId);
   if (!buku || buku.stok_tersedia <= 0) { req.flash('error','Buku tidak tersedia.'); return res.redirect('/buku/'+req.params.bukuId); }
+  // Check if already has pending/active peminjaman for this book
+  const existing = db.prepare("SELECT id FROM peminjaman WHERE user_id=? AND buku_id=? AND status IN ('menunggu','dipinjam')").get(uid, buku.id);
+  if (existing) { req.flash('error','Anda sudah memiliki peminjaman aktif untuk buku ini.'); return res.redirect('/buku/'+req.params.bukuId); }
   const today = new Date(); const due = new Date(); due.setDate(today.getDate()+14);
   db.prepare('INSERT INTO peminjaman (user_id,buku_id,tanggal_pinjam,tanggal_kembali,status) VALUES (?,?,?,?,?)')
     .run(uid, buku.id, today.toISOString().slice(0,10), due.toISOString().slice(0,10), 'menunggu');
   gami.addPoin(uid, 10); gami.checkAchievements(uid);
   logAktivitas(uid, 'pinjam_buku', `Meminjam: ${buku.judul}`, 'buku', buku.id);
   notifyUser(uid, 'Permintaan Peminjaman', `Permintaan pinjam "${buku.judul}" menunggu persetujuan.`, 'info');
-  req.flash('success','Permintaan dikirim. +10 poin!'); res.redirect('/murid/buku-saya');
+  req.flash('success','Peminjaman buku sedang dalam proses persetujuan dalam 1x24 jam. Jika urgent, silahkan menghubungi admin Rubela Indonesia.'); res.redirect('/murid/buku-saya');
 });
 router.post('/perpanjang/:id', (req, res) => {
   const p = db.prepare('SELECT * FROM peminjaman WHERE id=? AND user_id=?').get(req.params.id, req.session.user.id);
   if (p && p.status==='dipinjam') {
+    if (p.perpanjangan >= 2) { req.flash('error','Perpanjangan maksimal 2 kali. Silakan lakukan peminjaman kembali.'); return res.redirect('/murid/buku-saya'); }
     if (!bolehPerpanjang(p.tanggal_kembali)) { req.flash('error','Perpanjangan hanya bisa dilakukan H-2 sebelum tenggat.'); return res.redirect('/murid/buku-saya'); }
     const d = new Date(p.tanggal_kembali); d.setDate(d.getDate()+7);
     db.prepare('UPDATE peminjaman SET tanggal_kembali=?,perpanjangan=perpanjangan+1 WHERE id=?').run(d.toISOString().slice(0,10), p.id);
@@ -146,7 +150,16 @@ router.get('/kelas/:id', (req, res) => {
 // ==================== CBT / UJIAN ====================
 router.get('/ujian', (req, res) => {
   const uid = req.session.user.id;
-  const list = db.prepare("SELECT uj.*,(SELECT status FROM ujian_peserta WHERE ujian_id=uj.id AND user_id=?) my_status,(SELECT nilai FROM ujian_peserta WHERE ujian_id=uj.id AND user_id=?) my_nilai FROM ujian uj WHERE uj.status='aktif' AND (uj.kelas_id IS NULL OR uj.kelas_id IN (SELECT kelas_id FROM kelas_member WHERE user_id=?)) ORDER BY uj.waktu_selesai").all(uid,uid,uid);
+  // scope: 'semua' = visible to all, 'subtest' = visible to matching subtest kelas, 'kelas' = only kelas members
+  const list = db.prepare(`SELECT uj.*,
+    (SELECT status FROM ujian_peserta WHERE ujian_id=uj.id AND user_id=?) my_status,
+    (SELECT nilai FROM ujian_peserta WHERE ujian_id=uj.id AND user_id=?) my_nilai
+    FROM ujian uj WHERE uj.status='aktif' AND (
+      uj.scope='semua'
+      OR (uj.scope='subtest' AND uj.scope_subtest IN (SELECT k.subtest FROM kelas k JOIN kelas_member km ON km.kelas_id=k.id WHERE km.user_id=?))
+      OR (uj.kelas_id IS NULL)
+      OR (uj.kelas_id IN (SELECT kelas_id FROM kelas_member WHERE user_id=?))
+    ) ORDER BY uj.waktu_selesai`).all(uid,uid,uid,uid);
   res.render('murid/ujian', { title: 'Ujian & Kuis', list });
 });
 router.get('/ujian/:id/kerjakan', (req, res) => {

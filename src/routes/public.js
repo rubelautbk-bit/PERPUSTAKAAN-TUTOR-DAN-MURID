@@ -99,6 +99,14 @@ router.get('/buku/:id', (req, res) => {
   const pdfUrl = resolvePdfUrl(buku);
   const coverUrl = resolveCoverUrl(buku);
 
+  // Check if current user has approved peminjaman for Baca Online button
+  let hasPeminjamanApproved = false;
+  if (req.session.user && req.session.user.role === 'murid') {
+    hasPeminjamanApproved = !!db.prepare("SELECT id FROM peminjaman WHERE user_id=? AND buku_id=? AND status='dipinjam'").get(req.session.user.id, buku.id);
+  } else if (req.session.user && (req.session.user.role === 'admin' || req.session.user.role === 'tutor')) {
+    hasPeminjamanApproved = true; // admin/tutor can always read
+  }
+
   res.render('public/detail-buku', {
     title: buku.judul,
     buku,
@@ -106,6 +114,7 @@ router.get('/buku/:id', (req, res) => {
     rekomendasi,
     pdfUrl,
     coverUrl,
+    hasPeminjamanApproved,
   });
 });
 
@@ -113,6 +122,15 @@ router.get('/buku/:id', (req, res) => {
 router.get('/buku/:id/baca', (req, res) => {
   const buku = db.prepare('SELECT * FROM buku WHERE id=?').get(req.params.id);
   if (!buku) return res.redirect('/katalog');
+
+  // Restrict: murid can only read if peminjaman approved (status=dipinjam)
+  if (req.session.user && req.session.user.role === 'murid') {
+    const approved = db.prepare("SELECT id FROM peminjaman WHERE user_id=? AND buku_id=? AND status='dipinjam'").get(req.session.user.id, buku.id);
+    if (!approved) {
+      req.flash('error', 'Anda harus meminjam buku ini dan menunggu persetujuan admin sebelum bisa membaca online.');
+      return res.redirect('/buku/' + buku.id);
+    }
+  }
 
   const rawUrl = resolvePdfUrl(buku);
   let pdfMode = 'none';

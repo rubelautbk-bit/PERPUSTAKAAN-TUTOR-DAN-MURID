@@ -48,7 +48,8 @@ function checkAchievements(userId) {
   const pinjam = db.prepare("SELECT COUNT(*) c FROM peminjaman WHERE user_id=?").get(userId).c;
   const selesai = db.prepare("SELECT COUNT(*) c FROM peminjaman WHERE user_id=? AND status='dikembalikan'").get(userId).c;
   const ulasan = db.prepare("SELECT COUNT(*) c FROM rating WHERE user_id=?").get(userId).c;
-  const quizSempurna = db.prepare("SELECT COUNT(*) c FROM quiz_jawaban WHERE user_id=? AND nilai=100").get(userId).c;
+  // Use ujian_peserta instead of non-existent quiz_jawaban table
+  const quizSempurna = db.prepare("SELECT COUNT(*) c FROM ujian_peserta WHERE user_id=? AND nilai>=100 AND status='selesai'").get(userId).c;
 
   if (pinjam >= 1) grantBadge(userId, 'FIRST_BOOK');
   if (selesai >= 5) grantBadge(userId, 'FIVE_BOOKS');

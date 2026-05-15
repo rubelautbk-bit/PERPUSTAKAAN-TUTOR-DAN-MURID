@@ -468,6 +468,8 @@ module.exports = function initSchema(db) {
   tryAdd(`ALTER TABLE materi ADD COLUMN buku_id INTEGER`);
   tryAdd(`ALTER TABLE forum ADD COLUMN kelas_id INTEGER`);
   tryAdd(`ALTER TABLE users ADD COLUMN active_session_id TEXT`);
+  tryAdd(`ALTER TABLE ujian ADD COLUMN scope TEXT DEFAULT 'kelas'`);
+  tryAdd(`ALTER TABLE ujian ADD COLUMN scope_subtest TEXT`);
 
   // Default settings
   const insertSetting = db.prepare('INSERT OR IGNORE INTO setting (key,value) VALUES (?,?)');

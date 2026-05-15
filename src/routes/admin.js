@@ -454,9 +454,9 @@ router.get('/ujian/new', (req, res) => {
   res.render('admin/ujian-form', { title: 'Buat Ujian', uj: null, kelas });
 });
 router.post('/ujian', (req, res) => {
-  const { judul,deskripsi,tipe,kelas_id,durasi_menit,waktu_mulai,waktu_selesai,acak_soal,acak_opsi,poin_negatif,timer_per_soal,anti_cheat,max_attempt } = req.body;
-  const info = db.prepare('INSERT INTO ujian (judul,deskripsi,tipe,kelas_id,created_by,durasi_menit,waktu_mulai,waktu_selesai,acak_soal,acak_opsi,poin_negatif,timer_per_soal,anti_cheat,max_attempt,status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
-    .run(judul,deskripsi,tipe||'kuis',kelas_id||null,req.session.user.id,durasi_menit||60,waktu_mulai||null,waktu_selesai||null,acak_soal?1:0,acak_opsi?1:0,poin_negatif||0,timer_per_soal||0,anti_cheat?1:0,max_attempt||1,'draft');
+  const { judul,deskripsi,tipe,kelas_id,durasi_menit,waktu_mulai,waktu_selesai,acak_soal,acak_opsi,poin_negatif,timer_per_soal,anti_cheat,max_attempt,scope,scope_subtest } = req.body;
+  const info = db.prepare('INSERT INTO ujian (judul,deskripsi,tipe,kelas_id,created_by,durasi_menit,waktu_mulai,waktu_selesai,acak_soal,acak_opsi,poin_negatif,timer_per_soal,anti_cheat,max_attempt,status,scope,scope_subtest) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
+    .run(judul,deskripsi,tipe||'kuis',kelas_id||null,req.session.user.id,durasi_menit||60,waktu_mulai||null,waktu_selesai||null,acak_soal?1:0,acak_opsi?1:0,poin_negatif||0,timer_per_soal||0,anti_cheat?1:0,max_attempt||1,'draft',scope||'kelas',scope_subtest||null);
   req.flash('success','Ujian dibuat.'); res.redirect('/admin/ujian/' + info.lastInsertRowid + '/soal');
 });
 router.get('/ujian/:id/soal', (req, res) => {
@@ -500,7 +500,19 @@ router.get('/usulan', (req, res) => {
   const list = db.prepare('SELECT ub.*,u.name AS user_name FROM usulan_buku ub JOIN users u ON u.id=ub.user_id ORDER BY ub.created_at DESC').all();
   res.render('admin/usulan', { title: 'Usulan Buku', list });
 });
-router.post('/usulan/:id/approve', (req, res) => { db.prepare("UPDATE usulan_buku SET status='disetujui',reviewed_by=? WHERE id=?").run(req.session.user.id, req.params.id); req.flash('success','Usulan disetujui.'); res.redirect('/admin/usulan'); });
+router.post('/usulan/:id/approve', (req, res) => {
+  db.prepare("UPDATE usulan_buku SET status='disetujui',reviewed_by=? WHERE id=?").run(req.session.user.id, req.params.id);
+  // Auto-add buku ke manajemen buku
+  const u = db.prepare('SELECT * FROM usulan_buku WHERE id=?').get(req.params.id);
+  if (u) {
+    const existing = db.prepare('SELECT id FROM buku WHERE judul=?').get(u.judul);
+    if (!existing) {
+      db.prepare('INSERT INTO buku (judul,penulis,tahun,stok,stok_tersedia,bahasa,sinopsis) VALUES (?,?,?,1,1,?,?)')
+        .run(u.judul, u.pencipta || null, u.tahun_terbit || null, 'Indonesia', u.alasan || null);
+    }
+  }
+  req.flash('success','Usulan disetujui dan buku otomatis ditambahkan ke manajemen buku.'); res.redirect('/admin/usulan');
+});
 router.post('/usulan/:id/reject', (req, res) => { db.prepare("UPDATE usulan_buku SET status='ditolak',reviewed_by=?,catatan_admin=? WHERE id=?").run(req.session.user.id, req.body.catatan||null, req.params.id); req.flash('success','Usulan ditolak.'); res.redirect('/admin/usulan'); });
 
 // ==================== PENGUMUMAN ====================
@@ -695,6 +707,68 @@ router.get('/rekap', (req, res) => {
     title: 'Rekapitulasi', totalPinjam, totalDenda, totalUjian, totalSoal,
     totalKelas, totalMurid, totalTutor, rekapSiswa, rekapTutor, rekapKelas
   });
+});
+
+// Rekap PDF export
+router.get('/rekap/export.pdf', (req, res) => {
+  const rekapSiswa = db.prepare(`
+    SELECT u.name, u.email,
+      (SELECT COUNT(*) FROM ujian_peserta up2 WHERE up2.user_id=u.id AND up2.status='selesai') total_ujian,
+      (SELECT ROUND(AVG(up3.nilai),1) FROM ujian_peserta up3 WHERE up3.user_id=u.id AND up3.status='selesai') avg_nilai,
+      (SELECT COUNT(*) FROM progress_baca pb WHERE pb.user_id=u.id) modul_dibaca
+    FROM users u WHERE u.role='murid' AND u.status='active' ORDER BY u.name LIMIT 100
+  `).all();
+  const rekapTutor = db.prepare(`
+    SELECT u.name,
+      (SELECT COUNT(*) FROM kelas WHERE tutor_id=u.id) jml_kelas,
+      (SELECT COUNT(*) FROM pertemuan WHERE kelas_id IN (SELECT id FROM kelas WHERE tutor_id=u.id)) jml_pertemuan,
+      (SELECT COUNT(*) FROM materi WHERE tutor_id=u.id) jml_materi
+    FROM users u WHERE u.role='tutor' AND u.status='active' ORDER BY u.name
+  `).all();
+  const rekapKelas = db.prepare(`
+    SELECT k.nama, k.kode, u.name AS tutor_name,
+      (SELECT COUNT(*) FROM kelas_member WHERE kelas_id=k.id) jml_murid,
+      (SELECT COUNT(*) FROM pertemuan WHERE kelas_id=k.id) jml_pertemuan,
+      (SELECT COUNT(*) FROM materi WHERE kelas_id=k.id) jml_materi
+    FROM kelas k JOIN users u ON u.id=k.tutor_id ORDER BY k.nama
+  `).all();
+
+  const doc = new PDFDocument({ margin: 40, size: 'A4' });
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', 'attachment; filename="rekap-perpustakaan.pdf"');
+  doc.pipe(res);
+
+  doc.fontSize(16).text('REKAPITULASI E-LIBRARY RUBELA', { align: 'center' });
+  doc.fontSize(9).text('Dicetak: ' + new Date().toLocaleString('id-ID'), { align: 'center' });
+  doc.moveDown(2);
+
+  // Rekap Siswa
+  doc.fontSize(12).text('REKAP SISWA', { underline: true }); doc.moveDown(0.5);
+  doc.fontSize(8);
+  rekapSiswa.forEach((s, i) => {
+    doc.text(`${i+1}. ${s.name} (${s.email}) | Ujian: ${s.total_ujian||0} | Nilai: ${s.avg_nilai||'-'} | Modul: ${s.modul_dibaca||0}`);
+  });
+  if (!rekapSiswa.length) doc.text('Belum ada data siswa.');
+  doc.moveDown(1.5);
+
+  // Rekap Tutor
+  doc.fontSize(12).text('REKAP TUTOR', { underline: true }); doc.moveDown(0.5);
+  doc.fontSize(8);
+  rekapTutor.forEach((t, i) => {
+    doc.text(`${i+1}. ${t.name} | Kelas: ${t.jml_kelas} | Pertemuan: ${t.jml_pertemuan} | Materi: ${t.jml_materi}`);
+  });
+  if (!rekapTutor.length) doc.text('Belum ada tutor.');
+  doc.moveDown(1.5);
+
+  // Rekap Kelas
+  doc.fontSize(12).text('REKAP KELAS', { underline: true }); doc.moveDown(0.5);
+  doc.fontSize(8);
+  rekapKelas.forEach((k, i) => {
+    doc.text(`${i+1}. ${k.nama} (${k.kode}) - Tutor: ${k.tutor_name} | Murid: ${k.jml_murid} | Pertemuan: ${k.jml_pertemuan} | Materi: ${k.jml_materi}`);
+  });
+  if (!rekapKelas.length) doc.text('Belum ada kelas.');
+
+  doc.end();
 });
 
 module.exports = router;

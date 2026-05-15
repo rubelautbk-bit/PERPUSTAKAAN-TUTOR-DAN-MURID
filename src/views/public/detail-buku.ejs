@@ -5,10 +5,14 @@
     </div>
 
     <div style="display:grid; gap:8px; margin-top:16px;">
-      <% if (pdfUrl) { %>
+      <% if (pdfUrl && (typeof hasPeminjamanApproved !== 'undefined' && hasPeminjamanApproved)) { %>
         <a href="/buku/<%= buku.id %>/baca" class="btn btn-warning btn-block">
           &#128214; <%= t('book.readOnline') %>
         </a>
+      <% } else if (pdfUrl && user && user.role === 'murid') { %>
+        <div class="alert alert-info" style="font-size:0.88rem; margin:0; padding:10px;">
+          E-book tersedia setelah peminjaman disetujui admin.
+        </div>
       <% } %>
       <% if (user && user.role === 'murid') { %>
         <form method="POST" action="/murid/pinjam/<%= buku.id %>">
